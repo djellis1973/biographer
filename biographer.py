@@ -3,7 +3,7 @@
 # ============================================================================
 import streamlit as st
 import json
-from datetime import datetime
+from datetime import datetime, date
 from openai import OpenAI
 import os
 import sqlite3
@@ -141,6 +141,41 @@ st.markdown(f"""
         border-radius: 5px;
         transition: width 0.3s ease;
     }}
+    
+    .jot-box {{
+        background-color: #fff8e1;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #ffb300;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }}
+    
+    .streak-flame {{
+        font-size: 1.5rem;
+        animation: pulse 2s infinite;
+    }}
+    
+    @keyframes pulse {{
+        0% {{ opacity: 0.8; }}
+        50% {{ opacity: 1; }}
+        100% {{ opacity: 0.8; }}
+    }}
+    
+    .refresh-prompt-btn {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }}
+    
+    .refresh-prompt-btn:hover {{
+        transform: scale(1.05);
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -196,6 +231,22 @@ SESSIONS = [
 ]
 
 # ============================================================================
+# FALLBACK PROMPTS FOR "NO BLANK PAGES" FEATURE
+# ============================================================================
+FALLBACK_PROMPTS = [
+    "Describe a smell or sound that brings back a strong memory.",
+    "What's a small moment that had a big impact?",
+    "Tell me about a place that felt like home.",
+    "Who believed in you when you didn't believe in yourself?",
+    "What's something you learned the hard way?",
+    "Describe a meal that holds special meaning.",
+    "What was a turning point in how you see yourself?",
+    "Tell me about a gift that meant more than its cost.",
+    "What's a risk that paid off (or didn't)?",
+    "Describe a time you felt truly proud."
+]
+
+# ============================================================================
 # SECTION 4: JSON-BASED STORAGE FUNCTIONS (RELIABLE ON STREAMLIT CLOUD)
 # ============================================================================
 def get_user_filename(user_id):
@@ -240,7 +291,75 @@ def save_user_data(user_id, responses_data):
         return False
 
 # ============================================================================
-# SECTION 5: SESSION STATE INITIALIZATION WITH PERSISTENCE
+# SECTION 5: NEW FUNCTIONS FOR ADDED FEATURES
+# ============================================================================
+def update_streak():
+    """Update user's writing streak"""
+    if "streak_days" not in st.session_state:
+        st.session_state.streak_days = 1
+    if "last_active" not in st.session_state:
+        st.session_state.last_active = date.today().isoformat()
+    if "total_writing_days" not in st.session_state:
+        st.session_state.total_writing_days = 1
+    
+    today = date.today().isoformat()
+    
+    if st.session_state.last_active != today:
+        try:
+            last_date = date.fromisoformat(st.session_state.last_active)
+            today_date = date.today()
+            days_diff = (today_date - last_date).days
+            
+            if days_diff == 1:
+                # Consecutive day
+                st.session_state.streak_days += 1
+            elif days_diff > 1:
+                # Broken streak
+                st.session_state.streak_days = 1
+            
+            st.session_state.total_writing_days += 1
+            st.session_state.last_active = today
+        except:
+            st.session_state.last_active = today
+
+def get_streak_emoji(streak_days):
+    """Get flame emoji based on streak length"""
+    if streak_days >= 30:
+        return "🔥🔥🔥"
+    elif streak_days >= 7:
+        return "🔥🔥"
+    elif streak_days >= 3:
+        return "🔥"
+    else:
+        return "✨"
+
+def estimate_year_from_text(text):
+    """Simple year extraction from text"""
+    try:
+        years = re.findall(r'\b(19\d{2}|20\d{2})\b', text)
+        if years:
+            return int(years[0])
+    except:
+        pass
+    return None
+
+def save_jot(text, estimated_year=None):
+    """Save a quick jot to session state"""
+    if "quick_jots" not in st.session_state:
+        st.session_state.quick_jots = []
+    
+    jot_data = {
+        "text": text,
+        "year": estimated_year,
+        "date": datetime.now().isoformat(),
+        "word_count": len(re.findall(r'\w+', text))
+    }
+    
+    st.session_state.quick_jots.append(jot_data)
+    return True
+
+# ============================================================================
+# SECTION 6: SESSION STATE INITIALIZATION WITH PERSISTENCE
 # ============================================================================
 
 # Set page config first
@@ -271,6 +390,20 @@ if "confirming_clear" not in st.session_state:
     st.session_state.confirming_clear = None
 if "data_loaded" not in st.session_state:
     st.session_state.data_loaded = False
+if "prompt_index" not in st.session_state:
+    st.session_state.prompt_index = 0
+if "current_question_override" not in st.session_state:
+    st.session_state.current_question_override = None
+if "quick_jots" not in st.session_state:
+    st.session_state.quick_jots = []
+
+# Initialize streak system
+if "streak_days" not in st.session_state:
+    st.session_state.streak_days = 1
+if "last_active" not in st.session_state:
+    st.session_state.last_active = date.today().isoformat()
+if "total_writing_days" not in st.session_state:
+    st.session_state.total_writing_days = 1
 
 # Check URL for user parameter - THIS IS THE KEY TO PERSISTENCE
 if 'user' in st.query_params:
@@ -313,7 +446,7 @@ if st.session_state.user_id and st.session_state.user_id != "" and not st.sessio
     print(f"DEBUG: Data loaded for {st.session_state.user_id}")
 
 # ============================================================================
-# SECTION 6: CORE APPLICATION FUNCTIONS
+# SECTION 7: CORE APPLICATION FUNCTIONS
 # ============================================================================
 def save_response(session_id, question, answer):
     """Save response to both session state AND JSON file"""
@@ -325,6 +458,9 @@ def save_response(session_id, question, answer):
         return False
     
     print(f"DEBUG: Saving for user {user_id}, session {session_id}, question: {question[:50]}...")
+    
+    # Update streak when user saves
+    update_streak()
     
     # 1. Save to session state
     if session_id not in st.session_state.responses:
@@ -394,7 +530,7 @@ def get_progress_info(session_id):
     }
 
 # ============================================================================
-# SECTION 7: AUTO-CORRECT FUNCTION
+# SECTION 8: AUTO-CORRECT FUNCTION
 # ============================================================================
 def auto_correct_text(text):
     """Auto-correct text using OpenAI"""
@@ -416,11 +552,16 @@ def auto_correct_text(text):
         return text
 
 # ============================================================================
-# SECTION 8: GHOSTWRITER PROMPT FUNCTION
+# SECTION 9: GHOSTWRITER PROMPT FUNCTION
 # ============================================================================
 def get_system_prompt():
     current_session = SESSIONS[st.session_state.current_session]
-    current_question = current_session["questions"][st.session_state.current_question]
+    
+    # Use override prompt if set
+    if st.session_state.current_question_override:
+        current_question = st.session_state.current_question_override
+    else:
+        current_question = current_session["questions"][st.session_state.current_question]
     
     if st.session_state.ghostwriter_mode:
         return f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
@@ -450,7 +591,7 @@ Please:
 Tone: Kind, curious, professional"""
 
 # ============================================================================
-# SECTION 9: MAIN APP HEADER
+# SECTION 10: MAIN APP HEADER
 # ============================================================================
 st.markdown(f"""
 <div class="main-header">
@@ -461,7 +602,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 10: USER SETUP - SHOWS FIRST IF NO USER
+# SECTION 11: USER SETUP - SHOWS FIRST IF NO USER
 # ============================================================================
 if not st.session_state.user_id or st.session_state.user_id == "":
     st.title("👤 Welcome to Your Biography Builder")
@@ -501,7 +642,7 @@ if not st.session_state.user_id or st.session_state.user_id == "":
     st.stop()
 
 # ============================================================================
-# SECTION 11: SIDEBAR - USER PROFILE AND SETTINGS
+# SECTION 12: SIDEBAR - USER PROFILE AND SETTINGS
 # ============================================================================
 with st.sidebar:
     st.header("👤 Your Profile")
@@ -509,15 +650,77 @@ with st.sidebar:
     # Show current user
     st.success(f"✓ **Signed in as:** {st.session_state.user_id}")
     
+    # ============================================================================
+    # NEW: STREAK SYSTEM DISPLAY
+    # ============================================================================
+    st.divider()
+    st.subheader("🔥 Writing Streak")
+    
+    streak_emoji = get_streak_emoji(st.session_state.streak_days)
+    st.markdown(f"<div class='streak-flame'>{streak_emoji}</div>", unsafe_allow_html=True)
+    st.markdown(f"**{st.session_state.streak_days} day streak**")
+    st.caption(f"Total writing days: {st.session_state.total_writing_days}")
+    
+    # Show milestone badges
+    if st.session_state.streak_days >= 7:
+        st.success("🏆 Weekly Writer!")
+    if st.session_state.streak_days >= 30:
+        st.success("🌟 Monthly Master!")
+    
     # Stats
+    st.divider()
+    st.subheader("📊 Your Progress")
     total_responses = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
     total_words = sum(calculate_author_word_count(s["id"]) for s in SESSIONS)
     
     st.metric("Total Responses", total_responses)
     st.metric("Total Words", total_words)
     
+    # ============================================================================
+    # NEW: JOT NOW FEATURE
+    # ============================================================================
+    st.divider()
+    st.subheader("⚡ Quick Capture")
+    
+    with st.expander("💭 **Jot Now - Quick Memory**", expanded=False):
+        quick_note = st.text_area(
+            "Got a memory? Jot it down:",
+            height=120,
+            placeholder="E.g., 'That summer at grandma's house in 1995...' or 'My first day at IBM in 2003'",
+            key="quick_memory",
+            label_visibility="collapsed"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("💾 Save Jot", use_container_width=True):
+                if quick_note and quick_note.strip():
+                    estimated_year = estimate_year_from_text(quick_note)
+                    save_jot(quick_note, estimated_year)
+                    
+                    # Clear the input
+                    st.session_state.quick_memory = ""
+                    st.success("Saved! ✨")
+                    st.rerun()
+        
+        with col2:
+            if st.button("📝 Use as Prompt", use_container_width=True, disabled=not quick_note or not quick_note.strip()):
+                # Use this text as a new prompt
+                st.session_state.current_question_override = quick_note
+                st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
+                st.info("Ready to write about this!")
+                st.rerun()
+    
+    # Show saved jots if any
+    if st.session_state.get('quick_jots'):
+        st.caption(f"📝 {len(st.session_state.quick_jots)} quick notes saved")
+        if st.button("View Quick Notes"):
+            st.session_state.show_jots = True
+            st.rerun()
+    
     # Option to change user
-    if st.button("🔄 Switch User"):
+    st.divider()
+    if st.button("🔄 Switch User", use_container_width=True):
         st.session_state.user_id = ""
         st.query_params.clear()
         st.session_state.data_loaded = False
@@ -552,7 +755,7 @@ with st.sidebar:
         st.info("Standard mode active")
     
     # ============================================================================
-    # SECTION 11A: SIDEBAR - SESSION NAVIGATION
+    # SECTION 12A: SIDEBAR - SESSION NAVIGATION
     # ============================================================================
     st.divider()
     st.header("📖 Sessions")
@@ -583,10 +786,11 @@ with st.sidebar:
             st.session_state.current_session = i
             st.session_state.current_question = 0
             st.session_state.editing = None
+            st.session_state.current_question_override = None
             st.rerun()
     
     # ============================================================================
-    # SECTION 11B: SIDEBAR - NAVIGATION CONTROLS
+    # SECTION 12B: SIDEBAR - NAVIGATION CONTROLS
     # ============================================================================
     st.divider()
     st.subheader("Topic Navigation")
@@ -599,12 +803,14 @@ with st.sidebar:
         if st.button("← Previous Topic", disabled=st.session_state.current_question == 0, key="prev_q_sidebar"):
             st.session_state.current_question = max(0, st.session_state.current_question - 1)
             st.session_state.editing = None
+            st.session_state.current_question_override = None
             st.rerun()
     
     with col2:
         if st.button("Next Topic →", disabled=st.session_state.current_question >= len(current_session["questions"]) - 1, key="next_q_sidebar"):
             st.session_state.current_question = min(len(current_session["questions"]) - 1, st.session_state.current_question + 1)
             st.session_state.editing = None
+            st.session_state.current_question_override = None
             st.rerun()
     
     st.divider()
@@ -615,12 +821,14 @@ with st.sidebar:
             st.session_state.current_session = max(0, st.session_state.current_session - 1)
             st.session_state.current_question = 0
             st.session_state.editing = None
+            st.session_state.current_question_override = None
             st.rerun()
     with col2:
         if st.button("Next Session →", disabled=st.session_state.current_session >= len(SESSIONS)-1, key="next_session_sidebar"):
             st.session_state.current_session = min(len(SESSIONS)-1, st.session_state.current_session + 1)
             st.session_state.current_question = 0
             st.session_state.editing = None
+            st.session_state.current_question_override = None
             st.rerun()
     
     session_options = [f"Session {s['id']}: {s['title']}" for s in SESSIONS]
@@ -629,12 +837,13 @@ with st.sidebar:
         st.session_state.current_session = session_options.index(selected_session)
         st.session_state.current_question = 0
         st.session_state.editing = None
+        st.session_state.current_question_override = None
         st.rerun()
     
     st.divider()
     
     # ============================================================================
-    # SECTION 11C: SIDEBAR - EXPORT OPTIONS
+    # SECTION 12C: SIDEBAR - EXPORT OPTIONS
     # ============================================================================
     st.subheader("📤 Export Options")
     
@@ -690,7 +899,7 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # SECTION 11D: SIDEBAR - DANGEROUS ACTIONS WITH CONFIRMATION
+    # SECTION 12D: SIDEBAR - DANGEROUS ACTIONS WITH CONFIRMATION
     # ============================================================================
     st.subheader("⚠️ Clear Data")
     
@@ -754,11 +963,45 @@ with st.sidebar:
                 st.rerun()
 
 # ============================================================================
-# SECTION 12: MAIN CONTENT - SESSION HEADER
+# SECTION 13: QUICK NOTES VIEWER (IF REQUESTED)
+# ============================================================================
+if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
+    st.markdown("---")
+    st.subheader("📝 Your Quick Notes")
+    
+    for i, jot in enumerate(st.session_state.quick_jots):
+        with st.expander(f"Note {i+1} - {jot.get('year', 'No year')} - {jot['word_count']} words", expanded=False):
+            st.markdown(f'<div class="jot-box">{jot["text"]}</div>', unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"✏️ Use as Prompt", key=f"use_jot_{i}"):
+                    st.session_state.current_question_override = jot["text"]
+                    st.session_state.show_jots = False
+                    st.rerun()
+            with col2:
+                if st.button(f"🗑️ Delete", key=f"delete_jot_{i}"):
+                    st.session_state.quick_jots.pop(i)
+                    st.rerun()
+    
+    if st.button("Close Quick Notes", key="close_jots"):
+        st.session_state.show_jots = False
+        st.rerun()
+    
+    st.markdown("---")
+
+# ============================================================================
+# SECTION 14: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
 # ============================================================================
 current_session = SESSIONS[st.session_state.current_session]
 current_session_id = current_session["id"]
-current_question_text = current_session["questions"][st.session_state.current_question]
+
+# Get the current question text (either override or regular)
+if st.session_state.current_question_override:
+    current_question_text = st.session_state.current_question_override
+    question_source = "custom"
+else:
+    current_question_text = current_session["questions"][st.session_state.current_question]
+    question_source = "regular"
 
 col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
@@ -773,18 +1016,25 @@ with col1:
         st.markdown('<p class="ghostwriter-tag">Professional Ghostwriter Mode</p>', unsafe_allow_html=True)
         
 with col2:
-    st.markdown(f'<div class="question-counter" style="margin-top: 1rem;">Topic {st.session_state.current_question + 1} of {len(current_session["questions"])}</div>', unsafe_allow_html=True)
+    if question_source == "custom":
+        st.markdown(f'<div class="question-counter" style="margin-top: 1rem; color: #ff6b00;">✨ Custom Prompt</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="question-counter" style="margin-top: 1rem;">Topic {st.session_state.current_question + 1} of {len(current_session["questions"])}</div>', unsafe_allow_html=True)
+
 with col3:
     nav_col1, nav_col2 = st.columns(2)
     with nav_col1:
         if st.button("← Previous Topic", disabled=st.session_state.current_question == 0, key="prev_q_quick", use_container_width=True):
             st.session_state.current_question = max(0, st.session_state.current_question - 1)
             st.session_state.editing = None
+            st.session_state.current_question_override = None
             st.rerun()
     with nav_col2:
-        if st.button("Next Topic →", disabled=st.session_state.current_question >= len(current_session["questions"]) - 1, key="next_q_quick", use_container_width=True):
-            st.session_state.current_question = min(len(current_session["questions"]) - 1, st.session_state.current_question + 1)
-            st.session_state.editing = None
+        # NEW: REFRESH PROMPT BUTTON
+        if st.button("🔄 New Prompt", key="refresh_prompt", use_container_width=True):
+            # Rotate through fallback prompts
+            st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
+            st.session_state.current_question_override = FALLBACK_PROMPTS[st.session_state.prompt_index]
             st.rerun()
 
 # Show current topic
@@ -794,29 +1044,30 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Show session guidance
-st.markdown(f"""
-<div class="chapter-guidance">
-    {current_session.get('guidance', '')}
-</div>
-""", unsafe_allow_html=True)
+# Show session guidance (only for regular prompts)
+if question_source == "regular":
+    st.markdown(f"""
+    <div class="chapter-guidance">
+        {current_session.get('guidance', '')}
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.info("✨ **Custom Prompt** - Write about whatever comes to mind!")
 
-# Topics progress
-session_data = st.session_state.responses.get(current_session_id, {})
-topics_answered = len(session_data.get("questions", {}))
-total_topics = len(current_session["questions"])
+# Topics progress (only for regular prompts)
+if question_source == "regular":
+    session_data = st.session_state.responses.get(current_session_id, {})
+    topics_answered = len(session_data.get("questions", {}))
+    total_topics = len(current_session["questions"])
 
-if total_topics > 0:
-    topic_progress = topics_answered / total_topics
-    st.progress(min(topic_progress, 1.0))
-    st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
+    if total_topics > 0:
+        topic_progress = topics_answered / total_topics
+        st.progress(min(topic_progress, 1.0))
+        st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
-# SECTION 13: CONVERSATION DISPLAY AND CHAT INPUT
+# SECTION 15: CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
-current_session_id = current_session["id"]
-current_question_text = current_session["questions"][st.session_state.current_question]
-
 if current_session_id not in st.session_state.session_conversations:
     st.session_state.session_conversations[current_session_id] = {}
 
@@ -978,7 +1229,7 @@ with input_container:
         st.rerun()
 
 # ============================================================================
-# SECTION 14: WORD PROGRESS INDICATOR
+# SECTION 16: WORD PROGRESS INDICATOR
 # ============================================================================
 st.divider()
 
@@ -1035,7 +1286,7 @@ if st.session_state.editing_word_target:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 15: FOOTER WITH STATISTICS
+# SECTION 17: FOOTER WITH STATISTICS
 # ============================================================================
 st.divider()
 col1, col2, col3 = st.columns(3)
@@ -1051,7 +1302,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# SECTION 16: PUBLISH & VAULT SECTION
+# SECTION 18: PUBLISH & VAULT SECTION
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
@@ -1141,4 +1392,4 @@ else:
 # FOOTER
 # ============================================================================
 st.markdown("---")
-st.caption(f"DeeperVault UK Legacy Builder • User: {st.session_state.user_id} • Data saved to JSON files")
+st.caption(f"DeeperVault UK Legacy Builder • User: {st.session_state.user_id} • 🔥 {st.session_state.streak_days} day streak • Data saved to JSON files")
