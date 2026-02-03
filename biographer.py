@@ -193,184 +193,6 @@ st.markdown(f"""
         transform: scale(1.05);
     }}
     
-    /* Account Setup Styles */
-    .account-setup-container {{
-        max-width: 600px;
-        margin: 2rem auto;
-        padding: 2rem;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }}
-    
-    .account-setup-title {{
-        text-align: center;
-        color: #2c3e50;
-        margin-bottom: 2rem;
-        font-size: 2rem;
-        font-weight: 300;
-    }}
-    
-    .account-setup-subtitle {{
-        text-align: center;
-        color: #7f8c8d;
-        margin-bottom: 2rem;
-        font-size: 1.1rem;
-        line-height: 1.6;
-    }}
-    
-    .form-section {{
-        margin-bottom: 2rem;
-    }}
-    
-    .form-section-title {{
-        font-size: 1.2rem;
-        color: #3498db;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f1f2f6;
-    }}
-    
-    .form-group {{
-        margin-bottom: 1.5rem;
-    }}
-    
-    .form-label {{
-        display: block;
-        margin-bottom: 0.5rem;
-        color: #2c3e50;
-        font-weight: 500;
-    }}
-    
-    .form-input {{
-        width: 100%;
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s;
-    }}
-    
-    .form-input:focus {{
-        border-color: #3498db;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    }}
-    
-    .gender-options {{
-        display: flex;
-        gap: 1rem;
-        margin-top: 0.5rem;
-    }}
-    
-    .gender-option {{
-        flex: 1;
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-    }}
-    
-    .gender-option:hover {{
-        background-color: #f8f9fa;
-    }}
-    
-    .gender-option.selected {{
-        border-color: #3498db;
-        background-color: #e3f2fd;
-        color: #3498db;
-    }}
-    
-    .birthdate-group {{
-        display: flex;
-        gap: 1rem;
-    }}
-    
-    .birthdate-select {{
-        flex: 1;
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-    }}
-    
-    .account-for-options {{
-        display: flex;
-        gap: 1rem;
-        margin-top: 0.5rem;
-    }}
-    
-    .account-for-option {{
-        flex: 1;
-        padding: 1rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-    }}
-    
-    .account-for-option:hover {{
-        background-color: #f8f9fa;
-    }}
-    
-    .account-for-option.selected {{
-        border-color: #3498db;
-        background-color: #e3f2fd;
-        color: #3498db;
-    }}
-    
-    .setup-button {{
-        width: 100%;
-        padding: 1rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.3s, box-shadow 0.3s;
-        margin-top: 1rem;
-    }}
-    
-    .setup-button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }}
-    
-    .setup-button:disabled {{
-        background: #bdc3c7;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }}
-    
-    .success-message {{
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        text-align: center;
-    }}
-    
-    .error-message {{
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }}
-    
     /* Login/Signup Styles */
     .auth-container {{
         max-width: 500px;
@@ -503,6 +325,16 @@ st.markdown(f"""
     
     .forgot-password a:hover {{
         text-decoration: underline;
+    }}
+    
+    /* Profile Setup Styles */
+    .profile-setup-modal {{
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 600px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -955,7 +787,7 @@ def save_jot(text, estimated_year=None):
     return True
 
 # ============================================================================
-# SECTION 7: AUTHENTICATION COMPONENTS
+# SECTION 7: AUTHENTICATION COMPONENTS (FIXED VERSION)
 # ============================================================================
 def show_login_signup():
     """Show login/signup interface"""
@@ -1029,7 +861,7 @@ def show_login_form():
                         st.error(f"Login failed: {result.get('error', 'Unknown error')}")
 
 def show_signup_form():
-    """Display signup form"""
+    """Display signup form - SIMPLIFIED VERSION"""
     with st.form("signup_form"):
         st.subheader("Create New Account")
         
@@ -1079,7 +911,7 @@ def show_signup_form():
                 for error in errors:
                     st.error(error)
             else:
-                # Create basic user data
+                # Create basic user data (profile will be completed later)
                 user_data = {
                     "first_name": first_name,
                     "last_name": last_name,
@@ -1116,12 +948,12 @@ def show_signup_form():
                         st.error(f"Error creating account: {result.get('error', 'Unknown error')}")
 
 def show_profile_setup_modal():
-    """Show profile setup modal for new users"""
-    # Create a visual separator
-    st.markdown("---")
+    """Show profile setup modal for new users - FIXED VERSION"""
+    st.markdown('<div class="profile-setup-modal">', unsafe_allow_html=True)
     st.title("👤 Complete Your Profile")
     st.write("Please complete your profile to start building your timeline:")
     
+    # Use a form for profile setup
     with st.form("profile_setup_form"):
         # Gender selection using radio buttons
         st.write("**Gender**")
@@ -1169,6 +1001,7 @@ def show_profile_setup_modal():
                 # Validate birthdate
                 if not birth_month or not birth_day or not birth_year:
                     st.error("Please complete your birthdate or click 'Skip for Now'")
+                    st.markdown('</div>', unsafe_allow_html=True)
                     return
                 
                 # Update user account with profile data
@@ -1187,7 +1020,10 @@ def show_profile_setup_modal():
             
             # Close modal
             st.session_state.show_profile_setup = False
+            st.markdown('</div>', unsafe_allow_html=True)
             st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
 # SECTION 8: SESSION STATE INITIALIZATION
@@ -1458,6 +1294,8 @@ Tone: Kind, curious, professional"""
 # Show profile setup modal if needed
 if st.session_state.get('show_profile_setup', False):
     show_profile_setup_modal()
+    # Don't show main app if profile setup is active
+    st.stop()
 
 # Show login/signup if not logged in
 if not st.session_state.logged_in:
@@ -1491,6 +1329,8 @@ with st.sidebar:
         # Show birthdate and timeline info
         if profile.get('birthdate'):
             st.caption(f"🎂 Born: {profile['birthdate']}")
+        else:
+            st.caption("🎂 Birthdate: Not set")
         
         # Account type
         account_type = st.session_state.user_account['account_type']
