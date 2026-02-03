@@ -2021,7 +2021,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# SECTION 20: PUBLISH & VAULT SECTION
+# SECTION 20: PUBLISH & VAULT SECTION (FIXED VERSION)
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
@@ -2055,7 +2055,7 @@ if current_user and current_user != "" and export_data:
     import base64
     encoded_data = base64.b64encode(json_data.encode()).decode()
     
-    # Create URL for the publisher
+    # Create URL for the publisher (FIXED: Added proper URL)
     publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
     publisher_url = f"{publisher_base_url}?data={encoded_data}"
     
@@ -2076,6 +2076,9 @@ if current_user and current_user != "" and export_data:
         • All your stories organized
         • Ready to print or share
         """)
+        
+        # Use markdown link instead of link_button to avoid errors
+        st.markdown(f'<a href="{publisher_url}" target="_blank" style="text-decoration: none;"><button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">🖨️ Publish Biography</button></a>', unsafe_allow_html=True)
     
     with col2:
         st.markdown("#### 🔐 Save to Your Vault")
@@ -2090,6 +2093,9 @@ if current_user and current_user != "" and export_data:
         
         Your vault preserves important documents forever.
         """)
+        
+        # Use markdown link for vault too
+        st.markdown('<a href="https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/" target="_blank" style="text-decoration: none;"><button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">💾 Go to Secure Vault</button></a>', unsafe_allow_html=True)
     
     # Backup download
     with st.expander("📥 Download Raw Data (Backup)"):
