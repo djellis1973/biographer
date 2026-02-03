@@ -338,10 +338,10 @@ st.markdown(f"""
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }}
     
-    /* Publish Button Styles */
-    .publish-btn {{
+    /* HTML Link Button */
+    .html-link-btn {{
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        color: white !important;
         border: none;
         padding: 0.75rem 1.5rem;
         border-radius: 8px;
@@ -354,7 +354,7 @@ st.markdown(f"""
         display: inline-block;
     }}
     
-    .publish-btn:hover {{
+    .html-link-btn:hover {{
         opacity: 0.9;
     }}
 </style>
@@ -1581,7 +1581,7 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # EXPORT OPTIONS (FIXED - No key parameter in st.link_button)
+    # EXPORT OPTIONS (FIXED - No st.link_button, using HTML button instead)
     # ============================================================================
     st.subheader("📤 Export Options")
     
@@ -1624,14 +1624,15 @@ with st.sidebar:
             key="download_json_btn"
         )
         
-        # FIXED: Removed key parameter from st.link_button()
-        st.link_button(
-            "🖨️ Publish Biography",
-            publisher_url,
-            use_container_width=True,
-            help="Format your biography professionally"
-            # No 'key' parameter here!
-        )
+        # Use HTML button instead of st.link_button to avoid errors
+        st.markdown(f'''
+        <a href="{publisher_url}" target="_blank">
+            <button class="html-link-btn">
+                🖨️ Publish Biography
+            </button>
+        </a>
+        ''', unsafe_allow_html=True)
+        st.caption("Format your biography professionally")
     else:
         st.warning("No responses to export yet!")
     
@@ -1891,7 +1892,8 @@ for i, message in enumerate(conversation):
                     word_count = len(re.findall(r'\w+', message["content"]))
                     st.caption(f"📝 {word_count} words • Click ✏️ to edit")
                 with col2:
-                    if st.button("✏️", key=f"edit_{current_session_state.current_session}_{hash(current_question_text)}_{i}"):
+                    # FIXED: Changed current_session_state to st.session_state
+                    if st.button("✏️", key=f"edit_{st.session_state.current_session}_{hash(current_question_text)}_{i}"):
                         st.session_state.editing = (current_session_id, current_question_text, i)
                         st.session_state.edit_text = message["content"]
                         st.rerun()
@@ -2041,7 +2043,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# SECTION 22: PUBLISH & VAULT SECTION (FIXED VERSION)
+# SECTION 22: PUBLISH & VAULT SECTION (USING HTML BUTTONS)
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
@@ -2087,8 +2089,6 @@ if current_user and current_user != "" and export_data:
         st.markdown(f"""
         Generate a beautiful, formatted biography from your stories.
         
-        **[📘 Click to Create Biography]({publisher_url})**
-        
         Your book will include:
         • Professional formatting
         • Table of contents
@@ -2096,8 +2096,14 @@ if current_user and current_user != "" and export_data:
         • Ready to print or share
         """)
         
-        # Use HTML button instead of st.link_button()
-        st.markdown(f'<a href="{publisher_url}" target="_blank" style="text-decoration: none;"><button class="publish-btn">🖨️ Publish Biography</button></a>', unsafe_allow_html=True)
+        # Use HTML button instead of st.link_button
+        st.markdown(f'''
+        <a href="{publisher_url}" target="_blank">
+            <button class="html-link-btn">
+                🖨️ Publish Biography
+            </button>
+        </a>
+        ''', unsafe_allow_html=True)
     
     with col2:
         st.markdown("#### 🔐 Save to Your Vault")
@@ -2108,13 +2114,18 @@ if current_user and current_user != "" and export_data:
         2. Download the formatted PDF
         3. Save it to your secure vault
         
-        **[💾 Go to Secure Vault](https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/)**
-        
         Your vault preserves important documents forever.
         """)
         
         # Use HTML button for vault too
-        st.markdown('<a href="https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/" target="_blank" style="text-decoration: none;"><button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">💾 Go to Secure Vault</button></a>', unsafe_allow_html=True)
+        vault_url = "https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/"
+        st.markdown(f'''
+        <a href="{vault_url}" target="_blank">
+            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">
+                💾 Go to Secure Vault
+            </button>
+        </a>
+        ''', unsafe_allow_html=True)
     
     # Backup download
     with st.expander("📥 Download Raw Data (Backup)"):
