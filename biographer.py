@@ -14,12 +14,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets
 import string
+import base64  # For encoding export data
 
 # Initialize OpenAI client
 client = OpenAI(api_key=st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY")))
 
 # ============================================================================
-# SECTION 1A: EMAIL CONFIGURATION
+# SECTION 2: EMAIL CONFIGURATION
 # ============================================================================
 EMAIL_CONFIG = {
     "smtp_server": st.secrets.get("SMTP_SERVER", "smtp.gmail.com"),
@@ -30,7 +31,7 @@ EMAIL_CONFIG = {
 }
 
 # ============================================================================
-# SECTION 2: CSS STYLING AND VISUAL DESIGN
+# SECTION 3: CSS STYLING AND VISUAL DESIGN
 # ============================================================================
 LOGO_URL = "https://menuhunterai.com/wp-content/uploads/2026/01/logo.png"
 
@@ -336,11 +337,31 @@ st.markdown(f"""
         max-width: 600px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }}
+    
+    /* Publish Button Styles */
+    .publish-btn {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 1rem;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+    }}
+    
+    .publish-btn:hover {{
+        opacity: 0.9;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 3: SESSION DEFINITIONS AND DATA STRUCTURE
+# SECTION 4: SESSIONS DATA STRUCTURE
 # ============================================================================
 SESSIONS = [
     {
@@ -391,7 +412,7 @@ SESSIONS = [
 ]
 
 # ============================================================================
-# FALLBACK PROMPTS FOR "NO BLANK PAGES" FEATURE
+# SECTION 5: FALLBACK PROMPTS FOR "NO BLANK PAGES" FEATURE
 # ============================================================================
 FALLBACK_PROMPTS = [
     "Describe a smell or sound that brings back a strong memory.",
@@ -407,7 +428,7 @@ FALLBACK_PROMPTS = [
 ]
 
 # ============================================================================
-# SECTION 4: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
+# SECTION 6: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
 # ============================================================================
 def generate_password(length=12):
     """Generate a secure random password"""
@@ -675,7 +696,7 @@ def logout_user():
     st.rerun()
 
 # ============================================================================
-# SECTION 5: JSON-BASED STORAGE FUNCTIONS (RELIABLE ON STREAMLIT CLOUD)
+# SECTION 7: JSON-BASED STORAGE FUNCTIONS
 # ============================================================================
 def get_user_filename(user_id):
     """Create a safe filename for user data"""
@@ -719,7 +740,7 @@ def save_user_data(user_id, responses_data):
         return False
 
 # ============================================================================
-# SECTION 6: NEW FUNCTIONS FOR ADDED FEATURES
+# SECTION 8: NEW FUNCTIONS FOR ADDED FEATURES
 # ============================================================================
 def update_streak():
     """Update user's writing streak"""
@@ -787,7 +808,7 @@ def save_jot(text, estimated_year=None):
     return True
 
 # ============================================================================
-# SECTION 7: AUTHENTICATION COMPONENTS (FIXED VERSION)
+# SECTION 9: AUTHENTICATION COMPONENTS
 # ============================================================================
 def show_login_signup():
     """Show login/signup interface"""
@@ -861,7 +882,7 @@ def show_login_form():
                         st.error(f"Login failed: {result.get('error', 'Unknown error')}")
 
 def show_signup_form():
-    """Display signup form - SIMPLIFIED VERSION"""
+    """Display signup form"""
     with st.form("signup_form"):
         st.subheader("Create New Account")
         
@@ -948,7 +969,7 @@ def show_signup_form():
                         st.error(f"Error creating account: {result.get('error', 'Unknown error')}")
 
 def show_profile_setup_modal():
-    """Show profile setup modal for new users - FIXED VERSION"""
+    """Show profile setup modal for new users"""
     st.markdown('<div class="profile-setup-modal">', unsafe_allow_html=True)
     st.title("👤 Complete Your Profile")
     st.write("Please complete your profile to start building your timeline:")
@@ -1026,7 +1047,7 @@ def show_profile_setup_modal():
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 8: SESSION STATE INITIALIZATION
+# SECTION 10: SESSION STATE INITIALIZATION
 # ============================================================================
 
 # Set page config first
@@ -1132,7 +1153,7 @@ if st.session_state.logged_in and st.session_state.user_id and not st.session_st
     print(f"DEBUG: Data loaded for {st.session_state.user_id}")
 
 # ============================================================================
-# SECTION 9: CORE APPLICATION FUNCTIONS
+# SECTION 11: CORE APPLICATION FUNCTIONS
 # ============================================================================
 def save_response(session_id, question, answer):
     """Save response to both session state AND JSON file"""
@@ -1227,7 +1248,7 @@ def get_progress_info(session_id):
     }
 
 # ============================================================================
-# SECTION 10: AUTO-CORRECT FUNCTION
+# SECTION 12: AUTO-CORRECT FUNCTION
 # ============================================================================
 def auto_correct_text(text):
     """Auto-correct text using OpenAI"""
@@ -1249,7 +1270,7 @@ def auto_correct_text(text):
         return text
 
 # ============================================================================
-# SECTION 11: GHOSTWRITER PROMPT FUNCTION
+# SECTION 13: GHOSTWRITER PROMPT FUNCTION
 # ============================================================================
 def get_system_prompt():
     current_session = SESSIONS[st.session_state.current_session]
@@ -1288,7 +1309,7 @@ Please:
 Tone: Kind, curious, professional"""
 
 # ============================================================================
-# SECTION 12: MAIN APP FLOW CONTROL
+# SECTION 14: MAIN APP FLOW CONTROL
 # ============================================================================
 
 # Show profile setup modal if needed
@@ -1303,7 +1324,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ============================================================================
-# SECTION 13: MAIN APP HEADER
+# SECTION 15: MAIN APP HEADER
 # ============================================================================
 st.markdown(f"""
 <div class="main-header">
@@ -1314,7 +1335,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 14: SIDEBAR - USER PROFILE AND SETTINGS
+# SECTION 16: SIDEBAR - USER PROFILE AND SETTINGS
 # ============================================================================
 with st.sidebar:
     # User Profile Header with Account Info
@@ -1439,7 +1460,7 @@ with st.sidebar:
             st.rerun()
     
     # ============================================================================
-    # REST OF THE SIDEBAR (Original content from your script)
+    # INTERVIEW STYLE SETTINGS
     # ============================================================================
     st.divider()
     st.header("✍️ Interview Style")
@@ -1560,7 +1581,7 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # EXPORT OPTIONS
+    # EXPORT OPTIONS (FIXED - No key parameter in st.link_button)
     # ============================================================================
     st.subheader("📤 Export Options")
     
@@ -1587,7 +1608,6 @@ with st.sidebar:
         }, indent=2)
         
         # Encode the data for URL
-        import base64
         encoded_data = base64.b64encode(json_data.encode()).decode()
         
         # Create URL with the data
@@ -1604,13 +1624,13 @@ with st.sidebar:
             key="download_json_btn"
         )
         
-        # Link to publisher
+        # FIXED: Removed key parameter from st.link_button()
         st.link_button(
             "🖨️ Publish Biography",
             publisher_url,
             use_container_width=True,
-            help="Format your biography professionally",
-            key="publish_btn"
+            help="Format your biography professionally"
+            # No 'key' parameter here!
         )
     else:
         st.warning("No responses to export yet!")
@@ -1682,7 +1702,7 @@ with st.sidebar:
                 st.rerun()
 
 # ============================================================================
-# SECTION 15: QUICK NOTES VIEWER (IF REQUESTED)
+# SECTION 17: QUICK NOTES VIEWER (IF REQUESTED)
 # ============================================================================
 if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
@@ -1709,7 +1729,7 @@ if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
 
 # ============================================================================
-# SECTION 16: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
+# SECTION 18: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
 # ============================================================================
 current_session = SESSIONS[st.session_state.current_session]
 current_session_id = current_session["id"]
@@ -1785,7 +1805,7 @@ if question_source == "regular":
         st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
-# SECTION 17: CONVERSATION DISPLAY AND CHAT INPUT
+# SECTION 19: CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
 if current_session_id not in st.session_state.session_conversations:
     st.session_state.session_conversations[current_session_id] = {}
@@ -1948,7 +1968,7 @@ with input_container:
         st.rerun()
 
 # ============================================================================
-# SECTION 18: WORD PROGRESS INDICATOR
+# SECTION 20: WORD PROGRESS INDICATOR
 # ============================================================================
 st.divider()
 
@@ -2005,7 +2025,7 @@ if st.session_state.editing_word_target:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 19: FOOTER WITH STATISTICS
+# SECTION 21: FOOTER WITH STATISTICS
 # ============================================================================
 st.divider()
 col1, col2, col3 = st.columns(3)
@@ -2021,7 +2041,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# SECTION 20: PUBLISH & VAULT SECTION (FIXED VERSION)
+# SECTION 22: PUBLISH & VAULT SECTION (FIXED VERSION)
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
@@ -2052,10 +2072,9 @@ if current_user and current_user != "" and export_data:
     }, indent=2)
     
     # Encode the data for URL
-    import base64
     encoded_data = base64.b64encode(json_data.encode()).decode()
     
-    # Create URL for the publisher (FIXED: Added proper URL)
+    # Create URL for the publisher
     publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
     publisher_url = f"{publisher_base_url}?data={encoded_data}"
     
@@ -2077,8 +2096,8 @@ if current_user and current_user != "" and export_data:
         • Ready to print or share
         """)
         
-        # Use markdown link instead of link_button to avoid errors
-        st.markdown(f'<a href="{publisher_url}" target="_blank" style="text-decoration: none;"><button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">🖨️ Publish Biography</button></a>', unsafe_allow_html=True)
+        # Use HTML button instead of st.link_button()
+        st.markdown(f'<a href="{publisher_url}" target="_blank" style="text-decoration: none;"><button class="publish-btn">🖨️ Publish Biography</button></a>', unsafe_allow_html=True)
     
     with col2:
         st.markdown("#### 🔐 Save to Your Vault")
@@ -2094,7 +2113,7 @@ if current_user and current_user != "" and export_data:
         Your vault preserves important documents forever.
         """)
         
-        # Use markdown link for vault too
+        # Use HTML button for vault too
         st.markdown('<a href="https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/" target="_blank" style="text-decoration: none;"><button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">💾 Go to Secure Vault</button></a>', unsafe_allow_html=True)
     
     # Backup download
@@ -2115,7 +2134,7 @@ else:
     st.info("👤 **Enter your name to begin**")
 
 # ============================================================================
-# FOOTER
+# SECTION 23: FOOTER
 # ============================================================================
 st.markdown("---")
 
