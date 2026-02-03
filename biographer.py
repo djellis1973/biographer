@@ -52,7 +52,324 @@ st.markdown(f"""
         display: block;
     }}
     
-    /* ... (keep all existing CSS styles, add these new ones) ... */
+    .chapter-guidance {{
+        background-color: #e8f4f8;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #3498db;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }}
+    
+    .question-box {{
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 5px solid #4a5568;
+        margin-bottom: 0.5rem;
+        font-size: 1.3rem;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        line-height: 1.4;
+    }}
+    
+    .question-counter {{
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }}
+    
+    .stChatMessage {{
+        margin-bottom: 0.5rem !important;
+    }}
+    
+    .user-message-container {{
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+    }}
+    
+    .message-text {{
+        flex: 1;
+        min-width: 0;
+    }}
+    
+    [data-testid="stAppViewContainer"] {{
+        padding-top: 0.5rem !important;
+    }}
+    
+    .ghostwriter-tag {{
+        font-size: 0.8rem;
+        color: #666;
+        font-style: italic;
+        margin-top: 0.5rem;
+    }}
+    
+    .edit-target-box {{
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        border: 1px solid #dee2e6;
+    }}
+    
+    .warning-box {{
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }}
+    
+    .progress-container {{
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        margin: 1rem 0;
+    }}
+    
+    .progress-header {{
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #2c3e50;
+    }}
+    
+    .progress-status {{
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }}
+    
+    .progress-bar-container {{
+        height: 10px;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }}
+    
+    .progress-bar-fill {{
+        height: 100%;
+        border-radius: 5px;
+        transition: width 0.3s ease;
+    }}
+    
+    .jot-box {{
+        background-color: #fff8e1;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #ffb300;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }}
+    
+    .streak-flame {{
+        font-size: 1.5rem;
+        animation: pulse 2s infinite;
+    }}
+    
+    @keyframes pulse {{
+        0% {{ opacity: 0.8; }}
+        50% {{ opacity: 1; }}
+        100% {{ opacity: 0.8; }}
+    }}
+    
+    .refresh-prompt-btn {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }}
+    
+    .refresh-prompt-btn:hover {{
+        transform: scale(1.05);
+    }}
+    
+    /* Account Setup Styles */
+    .account-setup-container {{
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }}
+    
+    .account-setup-title {{
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+        font-weight: 300;
+    }}
+    
+    .account-setup-subtitle {{
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }}
+    
+    .form-section {{
+        margin-bottom: 2rem;
+    }}
+    
+    .form-section-title {{
+        font-size: 1.2rem;
+        color: #3498db;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f1f2f6;
+    }}
+    
+    .form-group {{
+        margin-bottom: 1.5rem;
+    }}
+    
+    .form-label {{
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 500;
+    }}
+    
+    .form-input {{
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }}
+    
+    .form-input:focus {{
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }}
+    
+    .gender-options {{
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }}
+    
+    .gender-option {{
+        flex: 1;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }}
+    
+    .gender-option:hover {{
+        background-color: #f8f9fa;
+    }}
+    
+    .gender-option.selected {{
+        border-color: #3498db;
+        background-color: #e3f2fd;
+        color: #3498db;
+    }}
+    
+    .birthdate-group {{
+        display: flex;
+        gap: 1rem;
+    }}
+    
+    .birthdate-select {{
+        flex: 1;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+    }}
+    
+    .account-for-options {{
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }}
+    
+    .account-for-option {{
+        flex: 1;
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }}
+    
+    .account-for-option:hover {{
+        background-color: #f8f9fa;
+    }}
+    
+    .account-for-option.selected {{
+        border-color: #3498db;
+        background-color: #e3f2fd;
+        color: #3498db;
+    }}
+    
+    .setup-button {{
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-top: 1rem;
+    }}
+    
+    .setup-button:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }}
+    
+    .setup-button:disabled {{
+        background: #bdc3c7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }}
+    
+    .success-message {{
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        text-align: center;
+    }}
+    
+    .error-message {{
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }}
     
     /* Login/Signup Styles */
     .auth-container {{
@@ -187,95 +504,6 @@ st.markdown(f"""
     .forgot-password a:hover {{
         text-decoration: underline;
     }}
-    
-    /* User Profile Dropdown */
-    .user-menu {{
-        position: relative;
-        display: inline-block;
-    }}
-    
-    .user-avatar {{
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        cursor: pointer;
-    }}
-    
-    .user-dropdown {{
-        display: none;
-        position: absolute;
-        right: 0;
-        top: 50px;
-        background: white;
-        min-width: 200px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border-radius: 8px;
-        z-index: 1000;
-        padding: 0.5rem 0;
-    }}
-    
-    .user-dropdown.show {{
-        display: block;
-    }}
-    
-    .user-dropdown-item {{
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        color: #2c3e50;
-        text-decoration: none;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }}
-    
-    .user-dropdown-item:hover {{
-        background-color: #f8f9fa;
-    }}
-    
-    .user-dropdown-item i {{
-        width: 20px;
-        text-align: center;
-    }}
-    
-    .user-dropdown-divider {{
-        height: 1px;
-        background-color: #e0e0e0;
-        margin: 0.5rem 0;
-    }}
-    
-    /* Profile Setup Modal */
-    .profile-setup-modal {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1001;
-    }}
-    
-    .profile-setup-content {{
-        background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        max-width: 500px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 30px rgba(0,0,0,0.2);
-    }}
-    
-    /* ... (keep all other existing CSS) ... */
 </style>
 """, unsafe_allow_html=True)
 
@@ -889,69 +1117,46 @@ def show_signup_form():
 
 def show_profile_setup_modal():
     """Show profile setup modal for new users"""
-    st.markdown("""
-    <div class="profile-setup-modal">
-        <div class="profile-setup-content">
-    """, unsafe_allow_html=True)
-    
+    # Create a visual separator
+    st.markdown("---")
     st.title("👤 Complete Your Profile")
     st.write("Please complete your profile to start building your timeline:")
     
     with st.form("profile_setup_form"):
-        # Gender selection
+        # Gender selection using radio buttons
         st.write("**Gender**")
-        gender_col1, gender_col2, gender_col3 = st.columns(3)
-        with gender_col1:
-            male_selected = st.button("👨 Male", key="modal_gender_male", use_container_width=True)
-        with gender_col2:
-            female_selected = st.button("👩 Female", key="modal_gender_female", use_container_width=True)
-        with gender_col3:
-            other_selected = st.button("⚧ Other", key="modal_gender_other", use_container_width=True)
-        
-        if 'modal_selected_gender' not in st.session_state:
-            st.session_state.modal_selected_gender = ""
-        
-        if male_selected:
-            st.session_state.modal_selected_gender = "Male"
-        if female_selected:
-            st.session_state.modal_selected_gender = "Female"
-        if other_selected:
-            st.session_state.modal_selected_gender = "Other"
-        
-        gender = st.session_state.modal_selected_gender
+        gender = st.radio(
+            "Gender",
+            ["Male", "Female", "Other", "Prefer not to say"],
+            horizontal=True,
+            key="modal_gender",
+            label_visibility="collapsed"
+        )
         
         # Birthdate
         st.write("**Birthdate**")
         col1, col2, col3 = st.columns(3)
         with col1:
-            months = ["Month", "January", "February", "March", "April", "May", "June", 
+            months = ["January", "February", "March", "April", "May", "June", 
                      "July", "August", "September", "October", "November", "December"]
             birth_month = st.selectbox("Month", months, key="modal_month", label_visibility="collapsed")
         with col2:
-            days = ["Day"] + list(range(1, 32))
+            days = list(range(1, 32))
             birth_day = st.selectbox("Day", days, key="modal_day", label_visibility="collapsed")
         with col3:
             current_year = datetime.now().year
-            years = ["Year"] + list(range(current_year, current_year - 120, -1))
+            years = list(range(current_year, current_year - 120, -1))
             birth_year = st.selectbox("Year", years, key="modal_year", label_visibility="collapsed")
         
-        # Account type
+        # Account type using radio buttons
         st.write("**Is this account for you or someone else?**")
-        account_col1, account_col2 = st.columns(2)
-        with account_col1:
-            self_account = st.button("👤 For Me", key="modal_account_self", use_container_width=True)
-        with account_col2:
-            other_account = st.button("👥 For Someone Else", key="modal_account_other", use_container_width=True)
-        
-        if 'modal_account_for' not in st.session_state:
-            st.session_state.modal_account_for = "self"
-        
-        if self_account:
-            st.session_state.modal_account_for = "self"
-        if other_account:
-            st.session_state.modal_account_for = "other"
-        
-        account_for = st.session_state.modal_account_for
+        account_for = st.radio(
+            "Account Type",
+            ["For me", "For someone else"],
+            key="modal_account_type",
+            horizontal=True,
+            label_visibility="collapsed"
+        )
         
         col1, col2 = st.columns(2)
         with col1:
@@ -962,27 +1167,27 @@ def show_profile_setup_modal():
         if submit_button or skip_button:
             if submit_button:
                 # Validate birthdate
-                if birth_month == "Month" or birth_day == "Day" or birth_year == "Year":
+                if not birth_month or not birth_day or not birth_year:
                     st.error("Please complete your birthdate or click 'Skip for Now'")
-                else:
-                    # Update user account with profile data
-                    birthdate = f"{birth_month} {birth_day}, {birth_year}"
+                    return
+                
+                # Update user account with profile data
+                birthdate = f"{birth_month} {birth_day}, {birth_year}"
+                account_for_value = "self" if account_for == "For me" else "other"
+                
+                if st.session_state.user_account:
+                    st.session_state.user_account['profile']['gender'] = gender
+                    st.session_state.user_account['profile']['birthdate'] = birthdate
+                    st.session_state.user_account['profile']['timeline_start'] = birthdate
+                    st.session_state.user_account['account_type'] = account_for_value
                     
-                    if st.session_state.user_account:
-                        st.session_state.user_account['profile']['gender'] = gender
-                        st.session_state.user_account['profile']['birthdate'] = birthdate
-                        st.session_state.user_account['profile']['timeline_start'] = birthdate
-                        st.session_state.user_account['account_type'] = account_for
-                        
-                        # Save updated account
-                        save_account_data(st.session_state.user_account)
-                        st.success("Profile updated successfully!")
+                    # Save updated account
+                    save_account_data(st.session_state.user_account)
+                    st.success("Profile updated successfully!")
             
             # Close modal
             st.session_state.show_profile_setup = False
             st.rerun()
-    
-    st.markdown("</div></div>", unsafe_allow_html=True)
 
 # ============================================================================
 # SECTION 8: SESSION STATE INITIALIZATION
@@ -1260,77 +1465,11 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ============================================================================
-# SECTION 13: USER PROFILE DROPDOWN IN HEADER
+# SECTION 13: MAIN APP HEADER
 # ============================================================================
-# Create a header with user profile dropdown
-col1, col2, col3 = st.columns([1, 2, 1])
-with col1:
-    st.markdown(f"""
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <img src="{LOGO_URL}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-        <span style="font-weight: bold; color: #2c3e50;">MemLife</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    # User profile dropdown
-    if st.session_state.user_account:
-        profile = st.session_state.user_account['profile']
-        initials = f"{profile['first_name'][0]}{profile['last_name'][0]}".upper()
-        
-        # Create a container for the dropdown
-        user_menu_html = f"""
-        <div class="user-menu">
-            <div class="user-avatar" id="userAvatar">
-                {initials}
-            </div>
-            <div class="user-dropdown" id="userDropdown">
-                <div class="user-dropdown-item" onclick="window.location.href='?user={st.session_state.user_id}&action=profile'">
-                    <span>👤</span>
-                    <span>{profile['first_name']} {profile['last_name']}</span>
-                </div>
-                <div class="user-dropdown-item" onclick="window.location.href='?user={st.session_state.user_id}&action=settings'">
-                    <span>⚙️</span>
-                    <span>Account Settings</span>
-                </div>
-                <div class="user-dropdown-item" onclick="window.location.href='?user={st.session_state.user_id}&action=profile_setup'">
-                    <span>📝</span>
-                    <span>Edit Profile</span>
-                </div>
-                <div class="user-dropdown-divider"></div>
-                <div class="user-dropdown-item" onclick="window.location.href='?action=logout'">
-                    <span>🚪</span>
-                    <span>Log Out</span>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-            document.getElementById('userAvatar').addEventListener('click', function(e) {{
-                e.stopPropagation();
-                var dropdown = document.getElementById('userDropdown');
-                dropdown.classList.toggle('show');
-            }});
-            
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {{
-                var dropdown = document.getElementById('userDropdown');
-                var avatar = document.getElementById('userAvatar');
-                if (!avatar.contains(e.target) && !dropdown.contains(e.target)) {{
-                    dropdown.classList.remove('show');
-                }}
-            }});
-        </script>
-        """
-        st.markdown(user_menu_html, unsafe_allow_html=True)
-        
-        # Handle logout action
-        if 'action' in st.query_params and st.query_params['action'] == 'logout':
-            logout_user()
-
-# Main app header
 st.markdown(f"""
 <div class="main-header">
+    <img src="{LOGO_URL}" class="logo-img" alt="MemLife Logo">
     <h2 style="margin: 0; line-height: 1.2;">MemLife - Your Life Timeline</h2>
     <p style="font-size: 0.9rem; color: #666; margin: 0; line-height: 1.2;">Preserve Your Legacy • Build Your Timeline • Share Your Story</p>
 </div>
@@ -1703,24 +1842,7 @@ with st.sidebar:
                 st.rerun()
 
 # ============================================================================
-# SECTION 15: MAIN CONTENT AREA
-# ============================================================================
-# [Rest of your existing main content code remains the same...]
-# This includes:
-# - Quick notes viewer
-# - Session header
-# - Conversation display
-# - Chat input
-# - Word progress indicator
-# - Footer with statistics
-# - Publish & vault section
-
-# Note: The main content area code from your original script should be placed here.
-# I've omitted it for brevity since it remains unchanged from your original code.
-# You would insert all the content from SECTION 16 onwards from your original script here.
-
-# ============================================================================
-# QUICK NOTES VIEWER
+# SECTION 15: QUICK NOTES VIEWER (IF REQUESTED)
 # ============================================================================
 if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
@@ -1747,7 +1869,7 @@ if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
 
 # ============================================================================
-# SESSION HEADER
+# SECTION 16: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
 # ============================================================================
 current_session = SESSIONS[st.session_state.current_session]
 current_session_id = current_session["id"]
@@ -1787,6 +1909,7 @@ with col3:
             st.session_state.current_question_override = None
             st.rerun()
     with nav_col2:
+        # NEW: REFRESH PROMPT BUTTON
         if st.button("🔄 New Prompt", key="refresh_prompt_btn", use_container_width=True):
             # Rotate through fallback prompts
             st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
@@ -1822,7 +1945,7 @@ if question_source == "regular":
         st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
-# CONVERSATION DISPLAY AND CHAT INPUT
+# SECTION 17: CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
 if current_session_id not in st.session_state.session_conversations:
     st.session_state.session_conversations[current_session_id] = {}
@@ -1985,7 +2108,7 @@ with input_container:
         st.rerun()
 
 # ============================================================================
-# WORD PROGRESS INDICATOR
+# SECTION 18: WORD PROGRESS INDICATOR
 # ============================================================================
 st.divider()
 
@@ -2042,7 +2165,7 @@ if st.session_state.editing_word_target:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# FOOTER WITH STATISTICS
+# SECTION 19: FOOTER WITH STATISTICS
 # ============================================================================
 st.divider()
 col1, col2, col3 = st.columns(3)
@@ -2058,7 +2181,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# PUBLISH & VAULT SECTION
+# SECTION 20: PUBLISH & VAULT SECTION
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
