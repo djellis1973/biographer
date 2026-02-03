@@ -396,6 +396,10 @@ if "current_question_override" not in st.session_state:
     st.session_state.current_question_override = None
 if "quick_jots" not in st.session_state:
     st.session_state.quick_jots = []
+if "current_jot" not in st.session_state:
+    st.session_state.current_jot = ""
+if "show_jots" not in st.session_state:
+    st.session_state.show_jots = False
 
 # Initialize streak system
 if "streak_days" not in st.session_state:
@@ -677,34 +681,38 @@ with st.sidebar:
     st.metric("Total Words", total_words)
     
     # ============================================================================
-    # NEW: JOT NOW FEATURE
+    # NEW: JOT NOW FEATURE (FIXED VERSION)
     # ============================================================================
     st.divider()
     st.subheader("⚡ Quick Capture")
     
     with st.expander("💭 **Jot Now - Quick Memory**", expanded=False):
+        # Use a text area with a unique key
         quick_note = st.text_area(
             "Got a memory? Jot it down:",
+            value="",
             height=120,
             placeholder="E.g., 'That summer at grandma's house in 1995...' or 'My first day at IBM in 2003'",
-            key="quick_memory",
+            key="jot_text_area",
             label_visibility="collapsed"
         )
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("💾 Save Jot", use_container_width=True):
+            if st.button("💾 Save Jot", key="save_jot_btn", use_container_width=True):
                 if quick_note and quick_note.strip():
                     estimated_year = estimate_year_from_text(quick_note)
                     save_jot(quick_note, estimated_year)
                     
-                    # Clear the input
-                    st.session_state.quick_memory = ""
                     st.success("Saved! ✨")
+                    # The text area will clear on rerun
                     st.rerun()
+                else:
+                    st.warning("Please write something first!")
         
         with col2:
-            if st.button("📝 Use as Prompt", use_container_width=True, disabled=not quick_note or not quick_note.strip()):
+            use_disabled = not quick_note or not quick_note.strip()
+            if st.button("📝 Use as Prompt", key="use_jot_btn", use_container_width=True, disabled=use_disabled):
                 # Use this text as a new prompt
                 st.session_state.current_question_override = quick_note
                 st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
@@ -714,13 +722,13 @@ with st.sidebar:
     # Show saved jots if any
     if st.session_state.get('quick_jots'):
         st.caption(f"📝 {len(st.session_state.quick_jots)} quick notes saved")
-        if st.button("View Quick Notes"):
+        if st.button("View Quick Notes", key="view_jots_btn"):
             st.session_state.show_jots = True
             st.rerun()
     
     # Option to change user
     st.divider()
-    if st.button("🔄 Switch User", use_container_width=True):
+    if st.button("🔄 Switch User", key="switch_user_btn", use_container_width=True):
         st.session_state.user_id = ""
         st.query_params.clear()
         st.session_state.data_loaded = False
@@ -732,7 +740,8 @@ with st.sidebar:
     ghostwriter_mode = st.toggle(
         "Professional Ghostwriter Mode", 
         value=st.session_state.ghostwriter_mode,
-        help="When enabled, the AI acts as a professional biographer using advanced interviewing techniques."
+        help="When enabled, the AI acts as a professional biographer using advanced interviewing techniques.",
+        key="ghostwriter_toggle"
     )
     
     if ghostwriter_mode != st.session_state.ghostwriter_mode:
@@ -742,7 +751,8 @@ with st.sidebar:
     spellcheck_enabled = st.toggle(
         "Auto Spelling Correction",
         value=st.session_state.spellcheck_enabled,
-        help="Automatically correct spelling and grammar as you type"
+        help="Automatically correct spelling and grammar as you type",
+        key="spellcheck_toggle"
     )
     
     if spellcheck_enabled != st.session_state.spellcheck_enabled:
@@ -781,7 +791,7 @@ with st.sidebar:
         button_text = f"{status} Session {session_id}: {session['title']} ({responses_count}/{total_questions})"
         
         if st.button(button_text, 
-                    key=f"select_{i}",
+                    key=f"select_session_{i}",
                     use_container_width=True):
             st.session_state.current_session = i
             st.session_state.current_question = 0
@@ -832,7 +842,7 @@ with st.sidebar:
             st.rerun()
     
     session_options = [f"Session {s['id']}: {s['title']}" for s in SESSIONS]
-    selected_session = st.selectbox("Jump to session:", session_options, index=st.session_state.current_session)
+    selected_session = st.selectbox("Jump to session:", session_options, index=st.session_state.current_session, key="session_selectbox")
     if session_options.index(selected_session) != st.session_state.current_session:
         st.session_state.current_session = session_options.index(selected_session)
         st.session_state.current_question = 0
@@ -883,7 +893,8 @@ with st.sidebar:
             data=json_data,
             file_name=f"LifeStory_{st.session_state.user_id}.json",
             mime="application/json",
-            use_container_width=True
+            use_container_width=True,
+            key="download_json_btn"
         )
         
         # Link to publisher
@@ -891,7 +902,8 @@ with st.sidebar:
             "🖨️ Publish Biography",
             publisher_url,
             use_container_width=True,
-            help="Format your biography professionally"
+            help="Format your biography professionally",
+            key="publish_btn"
         )
     else:
         st.warning("No responses to export yet!")
@@ -909,7 +921,7 @@ with st.sidebar:
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("✅ Confirm Delete Session", type="primary", use_container_width=True):
+            if st.button("✅ Confirm Delete Session", type="primary", use_container_width=True, key="confirm_delete_session"):
                 current_session_id = SESSIONS[st.session_state.current_session]["id"]
                 try:
                     # Clear from session state
@@ -921,7 +933,7 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Error: {e}")
         with col2:
-            if st.button("❌ Cancel", type="secondary", use_container_width=True):
+            if st.button("❌ Cancel", type="secondary", use_container_width=True, key="cancel_delete_session"):
                 st.session_state.confirming_clear = None
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -932,7 +944,7 @@ with st.sidebar:
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("✅ Confirm Delete All", type="primary", use_container_width=True):
+            if st.button("✅ Confirm Delete All", type="primary", use_container_width=True, key="confirm_delete_all"):
                 try:
                     # Clear from session state
                     for session in SESSIONS:
@@ -945,7 +957,7 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Error: {e}")
         with col2:
-            if st.button("❌ Cancel", type="secondary", use_container_width=True):
+            if st.button("❌ Cancel", type="secondary", use_container_width=True, key="cancel_delete_all"):
                 st.session_state.confirming_clear = None
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -953,12 +965,12 @@ with st.sidebar:
     else:
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🗑️ Clear Session", type="secondary", use_container_width=True):
+            if st.button("🗑️ Clear Session", type="secondary", use_container_width=True, key="clear_session_btn"):
                 st.session_state.confirming_clear = "session"
                 st.rerun()
         
         with col2:
-            if st.button("🔥 Clear All", type="secondary", use_container_width=True):
+            if st.button("🔥 Clear All", type="secondary", use_container_width=True, key="clear_all_btn"):
                 st.session_state.confirming_clear = "all"
                 st.rerun()
 
@@ -983,7 +995,7 @@ if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
                     st.session_state.quick_jots.pop(i)
                     st.rerun()
     
-    if st.button("Close Quick Notes", key="close_jots"):
+    if st.button("Close Quick Notes", key="close_jots_btn"):
         st.session_state.show_jots = False
         st.rerun()
     
@@ -1031,7 +1043,7 @@ with col3:
             st.rerun()
     with nav_col2:
         # NEW: REFRESH PROMPT BUTTON
-        if st.button("🔄 New Prompt", key="refresh_prompt", use_container_width=True):
+        if st.button("🔄 New Prompt", key="refresh_prompt_btn", use_container_width=True):
             # Rotate through fallback prompts
             st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
             st.session_state.current_question_override = FALLBACK_PROMPTS[st.session_state.prompt_index]
@@ -1152,7 +1164,7 @@ for i, message in enumerate(conversation):
                     word_count = len(re.findall(r'\w+', message["content"]))
                     st.caption(f"📝 {word_count} words • Click ✏️ to edit")
                 with col2:
-                    if st.button("✏️", key=f"edit_{current_session_id}_{hash(current_question_text)}_{i}"):
+                    if st.button("✏️", key=f"edit_{current_session_state.current_session}_{hash(current_question_text)}_{i}"):
                         st.session_state.editing = (current_session_id, current_question_text, i)
                         st.session_state.edit_text = message["content"]
                         st.rerun()
@@ -1166,7 +1178,7 @@ with input_container:
     st.write("")
     st.write("")
     
-    user_input = st.chat_input("Type your answer here...")
+    user_input = st.chat_input("Type your answer here...", key="chat_input")
     
     if user_input:
         # Auto-correct if enabled
@@ -1379,7 +1391,8 @@ if current_user and current_user != "" and export_data:
             data=json_data,
             file_name=f"{current_user}_stories.json",
             mime="application/json",
-            use_container_width=True
+            use_container_width=True,
+            key="backup_download_btn"
         )
         st.caption("Use this if the publisher link doesn't work")
         
