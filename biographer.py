@@ -52,197 +52,75 @@ st.markdown(f"""
         display: block;
     }}
     
-    .chapter-guidance {{
-        background-color: #e8f4f8;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #3498db;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }}
+    /* ... (keep all existing CSS styles, add these new ones) ... */
     
-    .question-box {{
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        border-left: 5px solid #4a5568;
-        margin-bottom: 0.5rem;
-        font-size: 1.3rem;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        line-height: 1.4;
-    }}
-    
-    .question-counter {{
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #2c3e50;
-    }}
-    
-    .stChatMessage {{
-        margin-bottom: 0.5rem !important;
-    }}
-    
-    .user-message-container {{
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        width: 100%;
-    }}
-    
-    .message-text {{
-        flex: 1;
-        min-width: 0;
-    }}
-    
-    [data-testid="stAppViewContainer"] {{
-        padding-top: 0.5rem !important;
-    }}
-    
-    .ghostwriter-tag {{
-        font-size: 0.8rem;
-        color: #666;
-        font-style: italic;
-        margin-top: 0.5rem;
-    }}
-    
-    .edit-target-box {{
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        border: 1px solid #dee2e6;
-    }}
-    
-    .warning-box {{
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 6px;
-        padding: 1rem;
-        margin: 0.5rem 0;
-    }}
-    
-    .progress-container {{
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        border: 2px solid #e0e0e0;
-        margin: 1rem 0;
-    }}
-    
-    .progress-header {{
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        color: #2c3e50;
-    }}
-    
-    .progress-status {{
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }}
-    
-    .progress-bar-container {{
-        height: 10px;
-        background-color: #e0e0e0;
-        border-radius: 5px;
-        overflow: hidden;
-        margin: 1rem 0;
-    }}
-    
-    .progress-bar-fill {{
-        height: 100%;
-        border-radius: 5px;
-        transition: width 0.3s ease;
-    }}
-    
-    .jot-box {{
-        background-color: #fff8e1;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #ffb300;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-    }}
-    
-    .streak-flame {{
-        font-size: 1.5rem;
-        animation: pulse 2s infinite;
-    }}
-    
-    @keyframes pulse {{
-        0% {{ opacity: 0.8; }}
-        50% {{ opacity: 1; }}
-        100% {{ opacity: 0.8; }}
-    }}
-    
-    .refresh-prompt-btn {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }}
-    
-    .refresh-prompt-btn:hover {{
-        transform: scale(1.05);
-    }}
-    
-    /* Account Setup Styles */
-    .account-setup-container {{
-        max-width: 600px;
-        margin: 2rem auto;
-        padding: 2rem;
+    /* Login/Signup Styles */
+    .auth-container {{
+        max-width: 500px;
+        margin: 3rem auto;
+        padding: 2.5rem;
         background: white;
         border-radius: 15px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }}
     
-    .account-setup-title {{
+    .auth-title {{
         text-align: center;
         color: #2c3e50;
-        margin-bottom: 2rem;
+        margin-bottom: 0.5rem;
         font-size: 2rem;
         font-weight: 300;
     }}
     
-    .account-setup-subtitle {{
+    .auth-subtitle {{
         text-align: center;
         color: #7f8c8d;
         margin-bottom: 2rem;
-        font-size: 1.1rem;
-        line-height: 1.6;
+        font-size: 1rem;
     }}
     
-    .form-section {{
+    .auth-tabs {{
+        display: flex;
         margin-bottom: 2rem;
-    }}
-    
-    .form-section-title {{
-        font-size: 1.2rem;
-        color: #3498db;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
         border-bottom: 2px solid #f1f2f6;
     }}
     
-    .form-group {{
+    .auth-tab {{
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 500;
+        color: #7f8c8d;
+        transition: all 0.3s;
+        border-bottom: 3px solid transparent;
+    }}
+    
+    .auth-tab:hover {{
+        background-color: #f8f9fa;
+    }}
+    
+    .auth-tab.active {{
+        color: #3498db;
+        border-bottom-color: #3498db;
+    }}
+    
+    .auth-form {{
+        margin-top: 1.5rem;
+    }}
+    
+    .auth-input-group {{
         margin-bottom: 1.5rem;
     }}
     
-    .form-label {{
+    .auth-label {{
         display: block;
         margin-bottom: 0.5rem;
         color: #2c3e50;
         font-weight: 500;
     }}
     
-    .form-input {{
+    .auth-input {{
         width: 100%;
         padding: 0.75rem;
         border: 2px solid #e0e0e0;
@@ -251,226 +129,153 @@ st.markdown(f"""
         transition: border-color 0.3s;
     }}
     
-    .form-input:focus {{
+    .auth-input:focus {{
         border-color: #3498db;
         outline: none;
         box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
     }}
     
-    .gender-options {{
-        display: flex;
-        gap: 1rem;
-        margin-top: 0.5rem;
-    }}
-    
-    .gender-option {{
-        flex: 1;
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-    }}
-    
-    .gender-option:hover {{
-        background-color: #f8f9fa;
-    }}
-    
-    .gender-option.selected {{
-        border-color: #3498db;
-        background-color: #e3f2fd;
-        color: #3498db;
-    }}
-    
-    .birthdate-group {{
-        display: flex;
-        gap: 1rem;
-    }}
-    
-    .birthdate-select {{
-        flex: 1;
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-    }}
-    
-    .account-for-options {{
-        display: flex;
-        gap: 1rem;
-        margin-top: 0.5rem;
-    }}
-    
-    .account-for-option {{
-        flex: 1;
-        padding: 1rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-    }}
-    
-    .account-for-option:hover {{
-        background-color: #f8f9fa;
-    }}
-    
-    .account-for-option.selected {{
-        border-color: #3498db;
-        background-color: #e3f2fd;
-        color: #3498db;
-    }}
-    
-    .setup-button {{
+    .auth-button {{
         width: 100%;
-        padding: 1rem;
+        padding: 0.875rem;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
         border-radius: 8px;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
         transition: transform 0.3s, box-shadow 0.3s;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }}
     
-    .setup-button:hover {{
+    .auth-button:hover {{
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }}
     
-    .setup-button:disabled {{
-        background: #bdc3c7;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
+    .auth-divider {{
+        display: flex;
+        align-items: center;
+        margin: 2rem 0;
+        color: #7f8c8d;
     }}
     
-    .success-message {{
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        padding: 1rem;
+    .auth-divider::before,
+    .auth-divider::after {{
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #e0e0e0;
+    }}
+    
+    .auth-divider-text {{
+        padding: 0 1rem;
+        font-size: 0.9rem;
+    }}
+    
+    .forgot-password {{
+        text-align: center;
+        margin-top: 1rem;
+    }}
+    
+    .forgot-password a {{
+        color: #3498db;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }}
+    
+    .forgot-password a:hover {{
+        text-decoration: underline;
+    }}
+    
+    /* User Profile Dropdown */
+    .user-menu {{
+        position: relative;
+        display: inline-block;
+    }}
+    
+    .user-avatar {{
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+    }}
+    
+    .user-dropdown {{
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 50px;
+        background: white;
+        min-width: 200px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         border-radius: 8px;
-        margin: 1rem 0;
+        z-index: 1000;
+        padding: 0.5rem 0;
+    }}
+    
+    .user-dropdown.show {{
+        display: block;
+    }}
+    
+    .user-dropdown-item {{
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: #2c3e50;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }}
+    
+    .user-dropdown-item:hover {{
+        background-color: #f8f9fa;
+    }}
+    
+    .user-dropdown-item i {{
+        width: 20px;
         text-align: center;
     }}
     
-    .error-message {{
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
+    .user-dropdown-divider {{
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 0.5rem 0;
     }}
     
-    /* Account Settings Styles */
-    .settings-container {{
-        max-width: 800px;
-        margin: 2rem auto;
-        padding: 2rem;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }}
-    
-    .settings-section {{
-        margin-bottom: 2.5rem;
-    }}
-    
-    .settings-title {{
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
-        font-size: 1.8rem;
-        font-weight: 600;
-    }}
-    
-    .settings-card {{
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border-left: 4px solid #3498db;
-    }}
-    
-    .settings-card-title {{
-        font-size: 1.2rem;
-        color: #2c3e50;
-        margin-bottom: 1rem;
+    /* Profile Setup Modal */
+    .profile-setup-modal {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        justify-content: center;
+        z-index: 1001;
     }}
     
-    .settings-info-grid {{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }}
-    
-    .info-item {{
+    .profile-setup-content {{
         background: white;
-        padding: 0.75rem;
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 30px rgba(0,0,0,0.2);
     }}
     
-    .info-label {{
-        font-size: 0.9rem;
-        color: #7f8c8d;
-        margin-bottom: 0.25rem;
-    }}
-    
-    .info-value {{
-        font-size: 1rem;
-        color: #2c3e50;
-        font-weight: 500;
-    }}
-    
-    .account-actions {{
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e0e0e0;
-    }}
-    
-    .action-button {{
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 6px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s;
-    }}
-    
-    .primary-button {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }}
-    
-    .secondary-button {{
-        background: #f1f2f6;
-        color: #2c3e50;
-    }}
-    
-    .danger-button {{
-        background: #dc3545;
-        color: white;
-    }}
-    
-    .action-button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }}
+    /* ... (keep all other existing CSS) ... */
 </style>
 """, unsafe_allow_html=True)
 
@@ -542,7 +347,7 @@ FALLBACK_PROMPTS = [
 ]
 
 # ============================================================================
-# SECTION 4: NEW USER ACCOUNT MANAGEMENT FUNCTIONS
+# SECTION 4: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
 # ============================================================================
 def generate_password(length=12):
     """Generate a secure random password"""
@@ -550,20 +355,32 @@ def generate_password(length=12):
     password = ''.join(secrets.choice(alphabet) for _ in range(length))
     return password
 
-def create_user_account(user_data):
+def hash_password(password):
+    """Hash password for storage (simple implementation - use bcrypt in production)"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(stored_hash, password):
+    """Verify password against stored hash"""
+    return stored_hash == hash_password(password)
+
+def create_user_account(user_data, password=None):
     """Create a new user account and save to accounts database"""
     try:
         # Generate a unique user ID
         user_id = hashlib.sha256(f"{user_data['email']}{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         
-        # Generate initial password
-        password = generate_password()
+        # Generate initial password if not provided
+        if not password:
+            password = generate_password()
         
         # Create user record
         user_record = {
             "user_id": user_id,
+            "email": user_data["email"].lower().strip(),
+            "password_hash": hash_password(password),
             "account_type": user_data.get("account_for", "self"),
             "created_at": datetime.now().isoformat(),
+            "last_login": datetime.now().isoformat(),
             "profile": {
                 "first_name": user_data["first_name"],
                 "last_name": user_data["last_name"],
@@ -572,23 +389,20 @@ def create_user_account(user_data):
                 "birthdate": user_data.get("birthdate", ""),
                 "timeline_start": user_data.get("birthdate", "")
             },
-            "credentials": {
-                "password": password,
-                "last_login": None,
-                "password_changed": False
-            },
             "settings": {
                 "email_notifications": True,
                 "auto_save": True,
                 "privacy_level": "private",
-                "theme": "light"
+                "theme": "light",
+                "email_verified": False
             },
             "stats": {
                 "total_sessions": 0,
                 "total_words": 0,
                 "current_streak": 0,
                 "longest_streak": 0,
-                "account_age_days": 0
+                "account_age_days": 0,
+                "last_active": datetime.now().isoformat()
             }
         }
         
@@ -637,7 +451,7 @@ def update_accounts_index(user_record):
         
         # Add or update user in index
         index[user_record['user_id']] = {
-            "email": user_record['profile']['email'],
+            "email": user_record['email'],
             "first_name": user_record['profile']['first_name'],
             "last_name": user_record['profile']['last_name'],
             "created_at": user_record['created_at'],
@@ -652,16 +466,51 @@ def update_accounts_index(user_record):
         print(f"Error updating accounts index: {e}")
         return False
 
-def get_account_data(user_id):
-    """Get account data for a user"""
+def get_account_data(user_id=None, email=None):
+    """Get account data for a user by ID or email"""
     try:
-        filename = f"accounts/{user_id}_account.json"
-        if os.path.exists(filename):
-            with open(filename, 'r') as f:
-                return json.load(f)
+        if user_id:
+            # Direct lookup by user_id
+            filename = f"accounts/{user_id}_account.json"
+            if os.path.exists(filename):
+                with open(filename, 'r') as f:
+                    return json.load(f)
+        elif email:
+            # Search by email
+            email = email.lower().strip()
+            index_file = "accounts/accounts_index.json"
+            if os.path.exists(index_file):
+                with open(index_file, 'r') as f:
+                    index = json.load(f)
+                
+                # Find user by email
+                for uid, user_data in index.items():
+                    if user_data.get("email", "").lower() == email:
+                        filename = f"accounts/{uid}_account.json"
+                        if os.path.exists(filename):
+                            with open(filename, 'r') as f:
+                                return json.load(f)
     except Exception as e:
         print(f"Error loading account data: {e}")
     return None
+
+def authenticate_user(email, password):
+    """Authenticate user with email and password"""
+    try:
+        account_data = get_account_data(email=email)
+        if account_data:
+            if verify_password(account_data['password_hash'], password):
+                # Update last login
+                account_data['last_login'] = datetime.now().isoformat()
+                save_account_data(account_data)
+                return {
+                    "success": True,
+                    "user_id": account_data['user_id'],
+                    "user_record": account_data
+                }
+        return {"success": False, "error": "Invalid email or password"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 def update_account_settings(user_id, settings):
     """Update user account settings"""
@@ -702,23 +551,23 @@ def send_welcome_email(user_data, credentials):
                     <h3 style="color: #2c3e50; margin-top: 0;">Your Account Details:</h3>
                     <p><strong>Account ID:</strong> {credentials['user_id']}</p>
                     <p><strong>Email:</strong> {user_data['email']}</p>
-                    <p><strong>Temporary Password:</strong> {credentials['password']}</p>
+                    <p><strong>Password:</strong> {credentials['password']}</p>
                 </div>
                 
                 <div style="background-color: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h4 style="color: #2c3e50; margin-top: 0;">Getting Started:</h4>
                     <ol>
-                        <li>Log in with your email and temporary password</li>
-                        <li>Change your password in Account Settings</li>
+                        <li>Log in with your email and password</li>
                         <li>Start building your timeline from your birthdate: {user_data.get('birthdate', 'Not specified')}</li>
                         <li>Add memories, photos, and stories to your timeline</li>
+                        <li>Share with family and friends</li>
                     </ol>
                 </div>
                 
                 <p>Your MemLife timeline starts from your birthdate and grows with you as you add more memories and milestones.</p>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://your-app-url.com/login" style="background-color: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Start Your MemLife Journey</a>
+                    <a href="#" style="background-color: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Start Your MemLife Journey</a>
                 </div>
                 
                 <p style="color: #7f8c8d; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px;">
@@ -745,6 +594,25 @@ def send_welcome_email(user_data, credentials):
     except Exception as e:
         print(f"Error sending welcome email: {e}")
         return False
+
+def logout_user():
+    """Log out the current user"""
+    # Clear all session state related to user
+    keys_to_clear = [
+        'user_id', 'user_account', 'logged_in', 'show_profile_setup',
+        'current_session', 'current_question', 'responses', 
+        'session_conversations', 'data_loaded'
+    ]
+    
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+    
+    # Clear query params
+    st.query_params.clear()
+    
+    # Rerun to show login page
+    st.rerun()
 
 # ============================================================================
 # SECTION 5: JSON-BASED STORAGE FUNCTIONS (RELIABLE ON STREAMLIT CLOUD)
@@ -859,7 +727,265 @@ def save_jot(text, estimated_year=None):
     return True
 
 # ============================================================================
-# SECTION 7: SESSION STATE INITIALIZATION WITH PERSISTENCE
+# SECTION 7: AUTHENTICATION COMPONENTS
+# ============================================================================
+def show_login_signup():
+    """Show login/signup interface"""
+    st.markdown("""
+    <div class="auth-container">
+        <h1 class="auth-title">MemLife</h1>
+        <p class="auth-subtitle">Your Life Timeline • Preserve Your Legacy</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Initialize active tab in session state
+    if 'auth_tab' not in st.session_state:
+        st.session_state.auth_tab = 'login'
+    
+    # Tabs for Login/Signup
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔐 Login", use_container_width=True, 
+                    type="primary" if st.session_state.auth_tab == 'login' else "secondary"):
+            st.session_state.auth_tab = 'login'
+            st.rerun()
+    with col2:
+        if st.button("📝 Sign Up", use_container_width=True,
+                    type="primary" if st.session_state.auth_tab == 'signup' else "secondary"):
+            st.session_state.auth_tab = 'signup'
+            st.rerun()
+    
+    st.divider()
+    
+    # Show appropriate form based on active tab
+    if st.session_state.auth_tab == 'login':
+        show_login_form()
+    else:
+        show_signup_form()
+
+def show_login_form():
+    """Display login form"""
+    with st.form("login_form"):
+        st.subheader("Welcome Back")
+        
+        email = st.text_input("Email Address", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
+        
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            remember_me = st.checkbox("Remember me", value=True)
+        with col2:
+            st.markdown('<div class="forgot-password"><a href="#">Forgot password?</a></div>', unsafe_allow_html=True)
+        
+        login_button = st.form_submit_button("Login to My Account", type="primary", use_container_width=True)
+        
+        if login_button:
+            if not email or not password:
+                st.error("Please enter both email and password")
+            else:
+                with st.spinner("Signing in..."):
+                    result = authenticate_user(email, password)
+                    if result["success"]:
+                        st.session_state.user_id = result["user_id"]
+                        st.session_state.user_account = result["user_record"]
+                        st.session_state.logged_in = True
+                        st.session_state.data_loaded = False
+                        
+                        # Set remember me
+                        if remember_me:
+                            st.query_params['user'] = result['user_id']
+                        
+                        st.success("✅ Login successful!")
+                        st.rerun()
+                    else:
+                        st.error(f"Login failed: {result.get('error', 'Unknown error')}")
+
+def show_signup_form():
+    """Display signup form"""
+    with st.form("signup_form"):
+        st.subheader("Create New Account")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            first_name = st.text_input("First Name*", key="signup_first_name")
+        with col2:
+            last_name = st.text_input("Last Name*", key="signup_last_name")
+        
+        email = st.text_input("Email Address*", key="signup_email")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            password = st.text_input("Password*", type="password", key="signup_password")
+        with col2:
+            confirm_password = st.text_input("Confirm Password*", type="password", key="signup_confirm_password")
+        
+        # Terms and conditions
+        accept_terms = st.checkbox("I agree to the Terms of Service and Privacy Policy*", key="signup_terms")
+        
+        signup_button = st.form_submit_button("Create My Account", type="primary", use_container_width=True)
+        
+        if signup_button:
+            # Validate form
+            errors = []
+            
+            if not first_name:
+                errors.append("First name is required")
+            if not last_name:
+                errors.append("Last name is required")
+            if not email or "@" not in email:
+                errors.append("Valid email is required")
+            if not password or len(password) < 8:
+                errors.append("Password must be at least 8 characters")
+            if password != confirm_password:
+                errors.append("Passwords do not match")
+            if not accept_terms:
+                errors.append("You must accept the terms and conditions")
+            
+            # Check if email already exists
+            if email and "@" in email:
+                existing_account = get_account_data(email=email)
+                if existing_account:
+                    errors.append("An account with this email already exists")
+            
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                # Create basic user data
+                user_data = {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "account_for": "self"  # Default value
+                }
+                
+                with st.spinner("Creating your account..."):
+                    result = create_user_account(user_data, password)
+                    
+                    if result["success"]:
+                        # Send welcome email
+                        email_sent = send_welcome_email(user_data, {
+                            "user_id": result["user_id"],
+                            "password": password
+                        })
+                        
+                        # Set user session
+                        st.session_state.user_id = result["user_id"]
+                        st.session_state.user_account = result["user_record"]
+                        st.session_state.logged_in = True
+                        st.session_state.data_loaded = False
+                        st.session_state.show_profile_setup = True  # Show profile setup modal
+                        
+                        # Show success message
+                        st.success("✅ Account created successfully!")
+                        
+                        if email_sent:
+                            st.info(f"📧 Welcome email sent to {email}")
+                        
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error(f"Error creating account: {result.get('error', 'Unknown error')}")
+
+def show_profile_setup_modal():
+    """Show profile setup modal for new users"""
+    st.markdown("""
+    <div class="profile-setup-modal">
+        <div class="profile-setup-content">
+    """, unsafe_allow_html=True)
+    
+    st.title("👤 Complete Your Profile")
+    st.write("Please complete your profile to start building your timeline:")
+    
+    with st.form("profile_setup_form"):
+        # Gender selection
+        st.write("**Gender**")
+        gender_col1, gender_col2, gender_col3 = st.columns(3)
+        with gender_col1:
+            male_selected = st.button("👨 Male", key="modal_gender_male", use_container_width=True)
+        with gender_col2:
+            female_selected = st.button("👩 Female", key="modal_gender_female", use_container_width=True)
+        with gender_col3:
+            other_selected = st.button("⚧ Other", key="modal_gender_other", use_container_width=True)
+        
+        if 'modal_selected_gender' not in st.session_state:
+            st.session_state.modal_selected_gender = ""
+        
+        if male_selected:
+            st.session_state.modal_selected_gender = "Male"
+        if female_selected:
+            st.session_state.modal_selected_gender = "Female"
+        if other_selected:
+            st.session_state.modal_selected_gender = "Other"
+        
+        gender = st.session_state.modal_selected_gender
+        
+        # Birthdate
+        st.write("**Birthdate**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            months = ["Month", "January", "February", "March", "April", "May", "June", 
+                     "July", "August", "September", "October", "November", "December"]
+            birth_month = st.selectbox("Month", months, key="modal_month", label_visibility="collapsed")
+        with col2:
+            days = ["Day"] + list(range(1, 32))
+            birth_day = st.selectbox("Day", days, key="modal_day", label_visibility="collapsed")
+        with col3:
+            current_year = datetime.now().year
+            years = ["Year"] + list(range(current_year, current_year - 120, -1))
+            birth_year = st.selectbox("Year", years, key="modal_year", label_visibility="collapsed")
+        
+        # Account type
+        st.write("**Is this account for you or someone else?**")
+        account_col1, account_col2 = st.columns(2)
+        with account_col1:
+            self_account = st.button("👤 For Me", key="modal_account_self", use_container_width=True)
+        with account_col2:
+            other_account = st.button("👥 For Someone Else", key="modal_account_other", use_container_width=True)
+        
+        if 'modal_account_for' not in st.session_state:
+            st.session_state.modal_account_for = "self"
+        
+        if self_account:
+            st.session_state.modal_account_for = "self"
+        if other_account:
+            st.session_state.modal_account_for = "other"
+        
+        account_for = st.session_state.modal_account_for
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            submit_button = st.form_submit_button("Complete Profile", type="primary", use_container_width=True)
+        with col2:
+            skip_button = st.form_submit_button("Skip for Now", type="secondary", use_container_width=True)
+        
+        if submit_button or skip_button:
+            if submit_button:
+                # Validate birthdate
+                if birth_month == "Month" or birth_day == "Day" or birth_year == "Year":
+                    st.error("Please complete your birthdate or click 'Skip for Now'")
+                else:
+                    # Update user account with profile data
+                    birthdate = f"{birth_month} {birth_day}, {birth_year}"
+                    
+                    if st.session_state.user_account:
+                        st.session_state.user_account['profile']['gender'] = gender
+                        st.session_state.user_account['profile']['birthdate'] = birthdate
+                        st.session_state.user_account['profile']['timeline_start'] = birthdate
+                        st.session_state.user_account['account_type'] = account_for
+                        
+                        # Save updated account
+                        save_account_data(st.session_state.user_account)
+                        st.success("Profile updated successfully!")
+            
+            # Close modal
+            st.session_state.show_profile_setup = False
+            st.rerun()
+    
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+# ============================================================================
+# SECTION 8: SESSION STATE INITIALIZATION
 # ============================================================================
 
 # Set page config first
@@ -871,14 +997,14 @@ st.set_page_config(
 )
 
 # Initialize ALL session state variables
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 if "user_id" not in st.session_state:
     st.session_state.user_id = ""
 if "user_account" not in st.session_state:
     st.session_state.user_account = None
-if "show_account_setup" not in st.session_state:
-    st.session_state.show_account_setup = False
-if "show_account_settings" not in st.session_state:
-    st.session_state.show_account_settings = False
+if "show_profile_setup" not in st.session_state:
+    st.session_state.show_profile_setup = False
 if "current_session" not in st.session_state:
     st.session_state.current_session = 0
 if "current_question" not in st.session_state:
@@ -920,12 +1046,15 @@ if "last_active" not in st.session_state:
 if "total_writing_days" not in st.session_state:
     st.session_state.total_writing_days = 1
 
-# Check URL for user parameter - THIS IS THE KEY TO PERSISTENCE
-if 'user' in st.query_params:
+# Check for remembered login via query params
+if not st.session_state.logged_in and 'user' in st.query_params:
     url_user = st.query_params['user']
-    if url_user != st.session_state.user_id:
+    account_data = get_account_data(url_user)
+    if account_data:
         st.session_state.user_id = url_user
-        st.session_state.data_loaded = False  # Force reload when user changes
+        st.session_state.user_account = account_data
+        st.session_state.logged_in = True
+        st.session_state.data_loaded = False
 
 # Initialize empty session structures
 if not st.session_state.responses:
@@ -940,14 +1069,9 @@ if not st.session_state.responses:
         }
         st.session_state.session_conversations[session_id] = {}
 
-# Load user data if we have a user and data hasn't been loaded yet
-if st.session_state.user_id and st.session_state.user_id != "" and not st.session_state.data_loaded:
+# Load user data if logged in and data hasn't been loaded yet
+if st.session_state.logged_in and st.session_state.user_id and not st.session_state.data_loaded:
     print(f"DEBUG: Loading data for user {st.session_state.user_id}")
-    
-    # Try to load account data first
-    account_data = get_account_data(st.session_state.user_id)
-    if account_data:
-        st.session_state.user_account = account_data
     
     # Load biography data
     user_data = load_user_data(st.session_state.user_id)
@@ -967,7 +1091,7 @@ if st.session_state.user_id and st.session_state.user_id != "" and not st.sessio
     print(f"DEBUG: Data loaded for {st.session_state.user_id}")
 
 # ============================================================================
-# SECTION 8: CORE APPLICATION FUNCTIONS
+# SECTION 9: CORE APPLICATION FUNCTIONS
 # ============================================================================
 def save_response(session_id, question, answer):
     """Save response to both session state AND JSON file"""
@@ -991,6 +1115,7 @@ def save_response(session_id, question, answer):
         
         st.session_state.user_account["stats"]["total_words"] = st.session_state.user_account["stats"].get("total_words", 0) + word_count
         st.session_state.user_account["stats"]["total_sessions"] = len(st.session_state.responses[session_id].get("questions", {}))
+        st.session_state.user_account["stats"]["last_active"] = datetime.now().isoformat()
         save_account_data(st.session_state.user_account)
     
     # 1. Save to session state
@@ -1061,7 +1186,7 @@ def get_progress_info(session_id):
     }
 
 # ============================================================================
-# SECTION 9: AUTO-CORRECT FUNCTION
+# SECTION 10: AUTO-CORRECT FUNCTION
 # ============================================================================
 def auto_correct_text(text):
     """Auto-correct text using OpenAI"""
@@ -1083,7 +1208,7 @@ def auto_correct_text(text):
         return text
 
 # ============================================================================
-# SECTION 10: GHOSTWRITER PROMPT FUNCTION
+# SECTION 11: GHOSTWRITER PROMPT FUNCTION
 # ============================================================================
 def get_system_prompt():
     current_session = SESSIONS[st.session_state.current_session]
@@ -1122,504 +1247,97 @@ Please:
 Tone: Kind, curious, professional"""
 
 # ============================================================================
-# SECTION 11: ACCOUNT SETUP COMPONENT
+# SECTION 12: MAIN APP FLOW CONTROL
 # ============================================================================
-def show_account_setup():
-    """Display the account setup form"""
-    st.markdown("""
-    <div class="account-setup-container">
-        <h1 class="account-setup-title">MemLife</h1>
-        <p class="account-setup-subtitle">
-            Just a few things to get started<br>
-            Please fill out the information below.<br>
-            MemLife will set up an account and timeline of your life starting from your birthdate.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    with st.form("account_setup_form", clear_on_submit=False):
-        # Personal Information Section
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
-        st.markdown('<h3 class="form-section-title">Personal Information</h3>', unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            first_name = st.text_input("First Name*", key="setup_first_name")
-        with col2:
-            last_name = st.text_input("Last Name*", key="setup_last_name")
-        
-        email = st.text_input("Email Address*", key="setup_email")
-        
-        # Gender selection
-        st.markdown('<div class="form-group">', unsafe_allow_html=True)
-        st.markdown('<div class="form-label">Gender</div>', unsafe_allow_html=True)
-        
-        gender_col1, gender_col2, gender_col3 = st.columns(3)
-        with gender_col1:
-            male_selected = st.button("👨 Male", key="gender_male", use_container_width=True)
-        with gender_col2:
-            female_selected = st.button("👩 Female", key="gender_female", use_container_width=True)
-        with gender_col3:
-            other_selected = st.button("⚧ Other", key="gender_other", use_container_width=True)
-        
-        if 'selected_gender' not in st.session_state:
-            st.session_state.selected_gender = ""
-        
-        if male_selected:
-            st.session_state.selected_gender = "Male"
-        if female_selected:
-            st.session_state.selected_gender = "Female"
-        if other_selected:
-            st.session_state.selected_gender = "Other"
-        
-        gender = st.session_state.selected_gender
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)  # Close form-section
-        
-        # Birthdate Section
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
-        st.markdown('<h3 class="form-section-title">Birthdate</h3>', unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            months = ["Month", "January", "February", "March", "April", "May", "June", 
-                     "July", "August", "September", "October", "November", "December"]
-            birth_month = st.selectbox("Month*", months, key="setup_month")
-        with col2:
-            days = ["Day"] + list(range(1, 32))
-            birth_day = st.selectbox("Day*", days, key="setup_day")
-        with col3:
-            current_year = datetime.now().year
-            years = ["Year"] + list(range(current_year, current_year - 120, -1))
-            birth_year = st.selectbox("Year*", years, key="setup_year")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Account Type Section
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
-        st.markdown('<h3 class="form-section-title">Account Type</h3>', unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div style="margin-bottom: 1rem;">
-            Do you want to create this for yourself, or someone else?<br>
-            <small>You can add more accounts at any time.</small>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        account_col1, account_col2 = st.columns(2)
-        with account_col1:
-            self_account = st.button("👤 For Me", key="account_self", use_container_width=True)
-        with account_col2:
-            other_account = st.button("👥 For Someone Else", key="account_other", use_container_width=True)
-        
-        if 'account_for' not in st.session_state:
-            st.session_state.account_for = "self"
-        
-        if self_account:
-            st.session_state.account_for = "self"
-        if other_account:
-            st.session_state.account_for = "other"
-        
-        account_for = st.session_state.account_for
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Terms and Conditions
-        st.markdown("""
-        <div style="margin: 2rem 0; padding: 1rem; background-color: #f8f9fa; border-radius: 8px;">
-            <p style="font-size: 0.9rem; color: #666; margin: 0;">
-                By creating an account, you agree to our <a href="#" style="color: #3498db;">Terms of Service</a> and <a href="#" style="color: #3498db;">Privacy Policy</a>.
-                Your data will be stored securely and you can export it at any time.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Submit button
-        submit_button = st.form_submit_button("Create My MemLife Account", type="primary", use_container_width=True)
-        
-        if submit_button:
-            # Validate form
-            errors = []
-            
-            if not first_name:
-                errors.append("First name is required")
-            if not last_name:
-                errors.append("Last name is required")
-            if not email or "@" not in email:
-                errors.append("Valid email is required")
-            if birth_month == "Month" or birth_day == "Day" or birth_year == "Year":
-                errors.append("Complete birthdate is required")
-            
-            if errors:
-                for error in errors:
-                    st.error(error)
-            else:
-                # Create birthdate string
-                birthdate = f"{birth_month} {birth_day}, {birth_year}"
-                
-                # Prepare user data
-                user_data = {
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "email": email,
-                    "gender": gender,
-                    "birthdate": birthdate,
-                    "account_for": account_for
-                }
-                
-                # Create account
-                with st.spinner("Creating your account and setting up your timeline..."):
-                    result = create_user_account(user_data)
-                    
-                    if result["success"]:
-                        # Send welcome email
-                        email_sent = send_welcome_email(user_data, {
-                            "user_id": result["user_id"],
-                            "password": result["password"]
-                        })
-                        
-                        # Set user session
-                        st.session_state.user_id = result["user_id"]
-                        st.session_state.user_account = result["user_record"]
-                        st.session_state.show_account_setup = False
-                        
-                        # Show success message
-                        st.success("✅ Account created successfully!")
-                        
-                        if email_sent:
-                            st.info(f"📧 Welcome email sent to {email}")
-                        
-                        # Show account details
-                        with st.expander("Your Account Details", expanded=True):
-                            st.write(f"**Account ID:** `{result['user_id']}`")
-                            st.write(f"**Temporary Password:** `{result['password']}`")
-                            st.write("**Please save these credentials!**")
-                            st.write("You can change your password in Account Settings.")
-                        
-                        st.balloons()
-                        st.rerun()
-                    else:
-                        st.error(f"Error creating account: {result.get('error', 'Unknown error')}")
+
+# Show profile setup modal if needed
+if st.session_state.get('show_profile_setup', False):
+    show_profile_setup_modal()
+
+# Show login/signup if not logged in
+if not st.session_state.logged_in:
+    show_login_signup()
+    st.stop()
 
 # ============================================================================
-# SECTION 12: ACCOUNT SETTINGS COMPONENT
+# SECTION 13: USER PROFILE DROPDOWN IN HEADER
 # ============================================================================
-def show_account_settings():
-    """Display account settings page"""
-    if not st.session_state.user_account:
-        st.error("No account found. Please create an account first.")
-        return
-    
-    account = st.session_state.user_account
-    
-    st.markdown("""
-    <div class="settings-container">
-        <h1 class="settings-title">🔧 Account Settings</h1>
+# Create a header with user profile dropdown
+col1, col2, col3 = st.columns([1, 2, 1])
+with col1:
+    st.markdown(f"""
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="{LOGO_URL}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+        <span style="font-weight: bold; color: #2c3e50;">MemLife</span>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Profile Information
-    with st.container():
-        st.markdown('<div class="settings-section">', unsafe_allow_html=True)
-        st.subheader("👤 Profile Information")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            with st.expander("View Profile", expanded=True):
-                st.markdown(f"""
-                **Full Name:** {account['profile']['first_name']} {account['profile']['last_name']}
-                
-                **Email:** {account['profile']['email']}
-                
-                **Gender:** {account['profile'].get('gender', 'Not specified')}
-                
-                **Birthdate:** {account['profile'].get('birthdate', 'Not specified')}
-                
-                **Timeline Start:** {account['profile'].get('timeline_start', 'Birthdate')}
-                
-                **Account Type:** {account['account_type'].title()}
-                
-                **Member Since:** {datetime.fromisoformat(account['created_at']).strftime('%B %d, %Y')}
-                """)
-        
-        with col2:
-            with st.expander("Edit Profile", expanded=False):
-                # Profile edit form
-                new_first = st.text_input("First Name", value=account['profile']['first_name'])
-                new_last = st.text_input("Last Name", value=account['profile']['last_name'])
-                new_email = st.text_input("Email", value=account['profile']['email'])
-                new_gender = st.selectbox("Gender", ["", "Male", "Female", "Other", "Prefer not to say"], 
-                                        index=["", "Male", "Female", "Other", "Prefer not to say"].index(account['profile'].get('gender', "")) if account['profile'].get('gender') in ["", "Male", "Female", "Other", "Prefer not to say"] else 0)
-                
-                if st.button("Update Profile", type="primary"):
-                    # Update profile
-                    account['profile']['first_name'] = new_first
-                    account['profile']['last_name'] = new_last
-                    account['profile']['email'] = new_email
-                    account['profile']['gender'] = new_gender
-                    
-                    if save_account_data(account):
-                        st.session_state.user_account = account
-                        st.success("Profile updated successfully!")
-                        st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Account Settings
-    with st.container():
-        st.markdown('<div class="settings-section">', unsafe_allow_html=True)
-        st.subheader("⚙️ Account Preferences")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            with st.expander("Notification Settings", expanded=True):
-                email_notifications = st.toggle(
-                    "Email Notifications",
-                    value=account['settings'].get('email_notifications', True),
-                    help="Receive email updates about your timeline"
-                )
-                
-                auto_save = st.toggle(
-                    "Auto-Save",
-                    value=account['settings'].get('auto_save', True),
-                    help="Automatically save your work as you type"
-                )
-                
-                if st.button("Save Preferences", type="primary"):
-                    account['settings']['email_notifications'] = email_notifications
-                    account['settings']['auto_save'] = auto_save
-                    
-                    if save_account_data(account):
-                        st.session_state.user_account = account
-                        st.success("Preferences saved!")
-                        st.rerun()
-        
-        with col2:
-            with st.expander("Privacy & Security", expanded=True):
-                privacy_level = st.selectbox(
-                    "Privacy Level",
-                    ["Private", "Friends Only", "Public"],
-                    index=["Private", "Friends Only", "Public"].index(account['settings'].get('privacy_level', "Private"))
-                )
-                
-                theme = st.selectbox(
-                    "Theme",
-                    ["Light", "Dark", "Auto"],
-                    index=["Light", "Dark", "Auto"].index(account['settings'].get('theme', "Light"))
-                )
-                
-                # Password change
-                st.divider()
-                st.write("**Change Password**")
-                current_pass = st.text_input("Current Password", type="password")
-                new_pass = st.text_input("New Password", type="password")
-                confirm_pass = st.text_input("Confirm New Password", type="password")
-                
-                if st.button("Change Password", type="primary"):
-                    if new_pass == confirm_pass and len(new_pass) >= 8:
-                        # In a real app, verify current password first
-                        account['credentials']['password'] = new_pass
-                        account['credentials']['password_changed'] = True
-                        
-                        if save_account_data(account):
-                            st.session_state.user_account = account
-                            st.success("Password changed successfully!")
-                    elif len(new_pass) < 8:
-                        st.error("Password must be at least 8 characters")
-                    else:
-                        st.error("New passwords don't match")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Account Statistics
-    with st.container():
-        st.markdown('<div class="settings-section">', unsafe_allow_html=True)
-        st.subheader("📊 Account Statistics")
-        
-        stats = account.get('stats', {})
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total Stories", stats.get('total_sessions', 0))
-        with col2:
-            st.metric("Total Words", stats.get('total_words', 0))
-        with col3:
-            st.metric("Current Streak", stats.get('current_streak', 0))
-        with col4:
-            st.metric("Account Age", f"{stats.get('account_age_days', 0)} days")
-        
-        # Timeline progress
-        st.divider()
-        st.write("**Your Timeline Progress**")
-        
-        # Calculate timeline progress based on age
-        if account['profile'].get('birthdate'):
-            try:
-                birth_year = int(account['profile']['birthdate'].split(', ')[-1])
-                current_year = datetime.now().year
-                age = current_year - birth_year
-                
-                if age > 0:
-                    # Simplified progress - in real app, would be based on actual entries
-                    timeline_progress = min(100, (stats.get('total_sessions', 0) / (age * 12)) * 100)  # Rough estimate
-                    
-                    st.progress(timeline_progress / 100)
-                    st.caption(f"Your timeline covers approximately {timeline_progress:.1f}% of your life so far")
-            except:
-                pass
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Account Actions
-    with st.container():
-        st.markdown('<div class="settings-section">', unsafe_allow_html=True)
-        st.subheader("⚠️ Account Actions")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("📥 Export All Data", use_container_width=True):
-                # Prepare data for export
-                export_data = {
-                    "account_info": account,
-                    "biography_data": st.session_state.responses,
-                    "export_date": datetime.now().isoformat()
-                }
-                
-                json_data = json.dumps(export_data, indent=2)
-                
-                st.download_button(
-                    label="Download JSON",
-                    data=json_data,
-                    file_name=f"MemLife_Export_{st.session_state.user_id}.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
-        
-        with col2:
-            if st.button("🔄 Reset Timeline", use_container_width=True):
-                st.warning("This will clear all your timeline entries. Are you sure?")
-                if st.button("Confirm Reset", type="primary", key="confirm_reset"):
-                    # Clear all responses
-                    for session_id in st.session_state.responses:
-                        st.session_state.responses[session_id]["questions"] = {}
-                    
-                    # Save empty data
-                    save_user_data(st.session_state.user_id, st.session_state.responses)
-                    st.success("Timeline reset successfully!")
-                    st.rerun()
-        
-        with col3:
-            if st.button("🗑️ Delete Account", type="secondary", use_container_width=True):
-                st.error("⚠️ **Permanent Account Deletion**")
-                st.write("This action cannot be undone. All your data will be permanently deleted.")
-                
-                confirm_text = st.text_input("Type 'DELETE' to confirm:")
-                if st.button("Permanently Delete Account", type="primary", disabled=confirm_text != "DELETE"):
-                    # In a real app, this would delete the account from database
-                    st.error("Account deletion would be performed here")
-                    # For safety, we're not implementing actual deletion in this demo
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Back button
-    if st.button("← Back to Biography", use_container_width=True):
-        st.session_state.show_account_settings = False
-        st.rerun()
 
-# ============================================================================
-# SECTION 13: MAIN APP HEADER
-# ============================================================================
+with col3:
+    # User profile dropdown
+    if st.session_state.user_account:
+        profile = st.session_state.user_account['profile']
+        initials = f"{profile['first_name'][0]}{profile['last_name'][0]}".upper()
+        
+        # Create a container for the dropdown
+        user_menu_html = f"""
+        <div class="user-menu">
+            <div class="user-avatar" id="userAvatar">
+                {initials}
+            </div>
+            <div class="user-dropdown" id="userDropdown">
+                <div class="user-dropdown-item" onclick="window.location.href='?user={st.session_state.user_id}&action=profile'">
+                    <span>👤</span>
+                    <span>{profile['first_name']} {profile['last_name']}</span>
+                </div>
+                <div class="user-dropdown-item" onclick="window.location.href='?user={st.session_state.user_id}&action=settings'">
+                    <span>⚙️</span>
+                    <span>Account Settings</span>
+                </div>
+                <div class="user-dropdown-item" onclick="window.location.href='?user={st.session_state.user_id}&action=profile_setup'">
+                    <span>📝</span>
+                    <span>Edit Profile</span>
+                </div>
+                <div class="user-dropdown-divider"></div>
+                <div class="user-dropdown-item" onclick="window.location.href='?action=logout'">
+                    <span>🚪</span>
+                    <span>Log Out</span>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            document.getElementById('userAvatar').addEventListener('click', function(e) {{
+                e.stopPropagation();
+                var dropdown = document.getElementById('userDropdown');
+                dropdown.classList.toggle('show');
+            }});
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {{
+                var dropdown = document.getElementById('userDropdown');
+                var avatar = document.getElementById('userAvatar');
+                if (!avatar.contains(e.target) && !dropdown.contains(e.target)) {{
+                    dropdown.classList.remove('show');
+                }}
+            }});
+        </script>
+        """
+        st.markdown(user_menu_html, unsafe_allow_html=True)
+        
+        # Handle logout action
+        if 'action' in st.query_params and st.query_params['action'] == 'logout':
+            logout_user()
+
+# Main app header
 st.markdown(f"""
 <div class="main-header">
-    <img src="{LOGO_URL}" class="logo-img" alt="MemLife Logo">
     <h2 style="margin: 0; line-height: 1.2;">MemLife - Your Life Timeline</h2>
     <p style="font-size: 0.9rem; color: #666; margin: 0; line-height: 1.2;">Preserve Your Legacy • Build Your Timeline • Share Your Story</p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 14: MAIN APP FLOW CONTROL
-# ============================================================================
-
-# Show account setup if requested
-if st.session_state.show_account_setup:
-    show_account_setup()
-    st.stop()
-
-# Show account settings if requested
-if st.session_state.show_account_settings:
-    show_account_settings()
-    st.stop()
-
-# Show user setup if no user ID
-if not st.session_state.user_id or st.session_state.user_id == "":
-    st.title("👋 Welcome to MemLife")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ## Your Life, Your Timeline
-        
-        MemLife helps you create a beautiful, detailed timeline of your life story
-        starting from your birthdate. Every memory, every milestone, preserved forever.
-        
-        **✨ Features:**
-        - 📅 Timeline starting from your birth
-        - 📖 Guided biography sessions
-        - 📸 Add photos and memories
-        - 🔗 Share with family and friends
-        - 🔒 Secure, private storage
-        - 📤 Export anytime
-        
-        **Ready to start your life timeline?**
-        """)
-        
-        if st.button("🚀 Create Your MemLife Account", type="primary", use_container_width=True):
-            st.session_state.show_account_setup = True
-            st.rerun()
-        
-        st.divider()
-        
-        # Existing user login
-        with st.form("existing_user_form"):
-            st.write("**Already have an account?**")
-            existing_user = st.text_input("Enter your Account ID:", key="existing_user_id")
-            login_submit = st.form_submit_button("Continue My Timeline", type="secondary")
-            
-            if login_submit and existing_user:
-                # Check if account exists
-                account_data = get_account_data(existing_user)
-                if account_data:
-                    st.session_state.user_id = existing_user
-                    st.session_state.user_account = account_data
-                    st.session_state.data_loaded = False
-                    st.rerun()
-                else:
-                    st.error("Account not found. Please check your Account ID or create a new account.")
-    
-    with col2:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 15px; color: white; height: 100%;">
-            <h3 style="color: white; margin-top: 0;">📖 Your Life Story</h3>
-            <p>Every life is a unique story waiting to be told. MemLife helps you:</p>
-            <ul style="color: white; padding-left: 1.2rem;">
-                <li>Document memories</li>
-                <li>Preserve family history</li>
-                <li>Create legacy stories</li>
-                <li>Share across generations</li>
-            </ul>
-            <p><small>Start free • No credit card required</small></p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Don't show the rest of the app
-    st.stop()
-
-# ============================================================================
-# SECTION 15: SIDEBAR - USER PROFILE AND SETTINGS
+# SECTION 14: SIDEBAR - USER PROFILE AND SETTINGS
 # ============================================================================
 with st.sidebar:
     # User Profile Header with Account Info
@@ -1639,23 +1357,19 @@ with st.sidebar:
         account_type = st.session_state.user_account['account_type']
         st.caption(f"👤 Account: {account_type.title()}")
         
-        # Account Settings Button
-        if st.button("⚙️ Account Settings", use_container_width=True):
-            st.session_state.show_account_settings = True
+        # Edit Profile Button
+        if st.button("📝 Edit Profile", use_container_width=True):
+            st.session_state.show_profile_setup = True
             st.rerun()
         
-        # Add Another Account Button
-        if st.button("👥 Add Another Account", use_container_width=True):
-            st.session_state.show_account_setup = True
-            st.rerun()
-    
-    else:
-        st.info(f"✍️ Writing as: {st.session_state.user_id}")
+        # Logout Button
+        if st.button("🚪 Log Out", use_container_width=True):
+            logout_user()
     
     st.divider()
     
     # ============================================================================
-    # NEW: STREAK SYSTEM DISPLAY
+    # STREAK SYSTEM DISPLAY
     # ============================================================================
     st.subheader("🔥 Writing Streak")
     
@@ -1700,7 +1414,7 @@ with st.sidebar:
     st.metric("Total Words", total_words)
     
     # ============================================================================
-    # NEW: JOT NOW FEATURE (FIXED VERSION)
+    # JOT NOW FEATURE
     # ============================================================================
     st.divider()
     st.subheader("⚡ Quick Capture")
@@ -1745,15 +1459,6 @@ with st.sidebar:
             st.session_state.show_jots = True
             st.rerun()
     
-    # Option to switch account
-    st.divider()
-    if st.button("🔄 Switch Account", key="switch_account_btn", use_container_width=True):
-        st.session_state.user_id = ""
-        st.session_state.user_account = None
-        st.query_params.clear()
-        st.session_state.data_loaded = False
-        st.rerun()
-    
     # ============================================================================
     # REST OF THE SIDEBAR (Original content from your script)
     # ============================================================================
@@ -1788,7 +1493,7 @@ with st.sidebar:
         st.info("Standard mode active")
     
     # ============================================================================
-    # SECTION 12A: SIDEBAR - SESSION NAVIGATION
+    # SESSION NAVIGATION
     # ============================================================================
     st.divider()
     st.header("📖 Sessions")
@@ -1823,7 +1528,7 @@ with st.sidebar:
             st.rerun()
     
     # ============================================================================
-    # SECTION 12B: SIDEBAR - NAVIGATION CONTROLS
+    # TOPIC NAVIGATION
     # ============================================================================
     st.divider()
     st.subheader("Topic Navigation")
@@ -1876,7 +1581,7 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # SECTION 12C: SIDEBAR - EXPORT OPTIONS
+    # EXPORT OPTIONS
     # ============================================================================
     st.subheader("📤 Export Options")
     
@@ -1906,7 +1611,7 @@ with st.sidebar:
         import base64
         encoded_data = base64.b64encode(json_data.encode()).decode()
         
-        # Create URL with the data (UPDATE THIS URL TO YOUR PUBLISHER APP)
+        # Create URL with the data
         publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
         publisher_url = f"{publisher_base_url}?data={encoded_data}"
         
@@ -1934,7 +1639,7 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # SECTION 12D: SIDEBAR - DANGEROUS ACTIONS WITH CONFIRMATION
+    # DANGEROUS ACTIONS WITH CONFIRMATION
     # ============================================================================
     st.subheader("⚠️ Clear Data")
     
@@ -1998,7 +1703,24 @@ with st.sidebar:
                 st.rerun()
 
 # ============================================================================
-# SECTION 16: QUICK NOTES VIEWER (IF REQUESTED)
+# SECTION 15: MAIN CONTENT AREA
+# ============================================================================
+# [Rest of your existing main content code remains the same...]
+# This includes:
+# - Quick notes viewer
+# - Session header
+# - Conversation display
+# - Chat input
+# - Word progress indicator
+# - Footer with statistics
+# - Publish & vault section
+
+# Note: The main content area code from your original script should be placed here.
+# I've omitted it for brevity since it remains unchanged from your original code.
+# You would insert all the content from SECTION 16 onwards from your original script here.
+
+# ============================================================================
+# QUICK NOTES VIEWER
 # ============================================================================
 if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
@@ -2025,7 +1747,7 @@ if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
 
 # ============================================================================
-# SECTION 17: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
+# SESSION HEADER
 # ============================================================================
 current_session = SESSIONS[st.session_state.current_session]
 current_session_id = current_session["id"]
@@ -2065,7 +1787,6 @@ with col3:
             st.session_state.current_question_override = None
             st.rerun()
     with nav_col2:
-        # NEW: REFRESH PROMPT BUTTON
         if st.button("🔄 New Prompt", key="refresh_prompt_btn", use_container_width=True):
             # Rotate through fallback prompts
             st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
@@ -2101,7 +1822,7 @@ if question_source == "regular":
         st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
-# SECTION 18: CONVERSATION DISPLAY AND CHAT INPUT
+# CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
 if current_session_id not in st.session_state.session_conversations:
     st.session_state.session_conversations[current_session_id] = {}
@@ -2264,7 +1985,7 @@ with input_container:
         st.rerun()
 
 # ============================================================================
-# SECTION 19: WORD PROGRESS INDICATOR
+# WORD PROGRESS INDICATOR
 # ============================================================================
 st.divider()
 
@@ -2321,7 +2042,7 @@ if st.session_state.editing_word_target:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 20: FOOTER WITH STATISTICS
+# FOOTER WITH STATISTICS
 # ============================================================================
 st.divider()
 col1, col2, col3 = st.columns(3)
@@ -2337,7 +2058,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# SECTION 21: PUBLISH & VAULT SECTION
+# PUBLISH & VAULT SECTION
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
@@ -2371,7 +2092,7 @@ if current_user and current_user != "" and export_data:
     import base64
     encoded_data = base64.b64encode(json_data.encode()).decode()
     
-    # Create URL for the publisher (UPDATE THIS TO YOUR ACTUAL PUBLISHER URL)
+    # Create URL for the publisher
     publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
     publisher_url = f"{publisher_base_url}?data={encoded_data}"
     
@@ -2441,4 +2162,4 @@ if st.session_state.user_account:
     """
     st.caption(footer_info)
 else:
-    st.caption(f"DeeperVault UK Legacy Builder • User: {st.session_state.user_id} • 🔥 {st.session_state.streak_days} day streak • Data saved to JSON files")
+    st.caption(f"MemLife Timeline • User: {st.session_state.user_id} • 🔥 {st.session_state.streak_days} day streak")
