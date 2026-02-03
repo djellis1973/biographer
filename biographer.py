@@ -1892,7 +1892,7 @@ for i, message in enumerate(conversation):
                     word_count = len(re.findall(r'\w+', message["content"]))
                     st.caption(f"📝 {word_count} words • Click ✏️ to edit")
                 with col2:
-                    # FIXED: Changed current_session_state to st.session_state
+                    # FIXED LINE: Changed current_session_state to st.session_state
                     if st.button("✏️", key=f"edit_{st.session_state.current_session}_{hash(current_question_text)}_{i}"):
                         st.session_state.editing = (current_session_id, current_question_text, i)
                         st.session_state.edit_text = message["content"]
