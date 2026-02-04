@@ -1,6 +1,7 @@
 # ============================================================================
 # SECTION 1: IMPORTS AND INITIAL SETUP
 # ============================================================================
+import image_manager
 import streamlit as st
 import json
 from datetime import datetime, date, timedelta
@@ -2090,7 +2091,6 @@ if st.session_state.logged_in and st.session_state.user_id:
                         )
                     st.success(f"Deleted {len(selected_images)} image(s)")
                     st.rerun()
-
 # ============================================================================
 # SECTION 21: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
 # ============================================================================
