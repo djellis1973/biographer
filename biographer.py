@@ -701,6 +701,15 @@ st.markdown(f"""
     .simple-image-btn:hover {{
         background: #45a049;
     }}
+    
+    /* Direct download container */
+    .download-container {{
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border: 2px dashed #3498db;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2138,9 +2147,9 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # BACKUP & EXPORT - UPDATED WITH IMAGES
+    # BACKUP & EXPORT - UPDATED WITH DIRECT DOWNLOAD
     # ============================================================================
-    st.subheader("💾 Backup Everything")
+    st.subheader("💾 Export Everything")
     
     total_answers = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
     total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
@@ -2194,7 +2203,7 @@ with st.sidebar:
             
             # Main backup button
             st.download_button(
-                label="💾 Download Backup",
+                label="💾 Download Everything (Stories + Photos)",
                 data=backup_json,
                 file_name=f"MemLife_Backup_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
                 mime="application/json",
@@ -2222,7 +2231,7 @@ with st.sidebar:
                 
                 st.info("💡 All photos are base64 encoded and embedded in the JSON file.")
             
-            # PUBLISH SECTION - UPDATED WITH IMAGES
+            # PUBLISH SECTION - UPDATED WITH DIRECT DOWNLOAD OPTION
             st.divider()
             st.subheader("🖨️ Create Your Book")
             
@@ -2249,11 +2258,6 @@ with st.sidebar:
             
             publisher_json = json.dumps(publisher_data, indent=2)
             
-            # Encode data for publisher
-            encoded_data = base64.b64encode(publisher_json.encode()).decode()
-            publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
-            publisher_url = f"{publisher_base_url}?data={encoded_data}"
-            
             if total_images_export > 0:
                 st.success(f"📚 **Create a beautiful book with:**")
                 st.write(f"• {sum(len(session['questions']) for session in export_data.values())} stories")
@@ -2262,14 +2266,39 @@ with st.sidebar:
             else:
                 st.info(f"📚 Create a beautiful book with {sum(len(session['questions']) for session in export_data.values())} stories")
             
-            # Use HTML button for publishing
+            # DIRECT DOWNLOAD FOR PUBLISHER DATA
+            st.markdown('<div class="download-container">', unsafe_allow_html=True)
+            st.write("**Step 1: Download your data for the publisher:**")
+            
+            st.download_button(
+                label="📥 Download Publisher Data",
+                data=publisher_json,
+                file_name=f"MemLife_Publisher_Export_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
+                mime="application/json",
+                use_container_width=True,
+                key="download_publisher_data_btn",
+                help="Download your data to upload to the publisher"
+            )
+            
+            st.write("**Step 2: Go to the publisher and upload this file:**")
+            
+            # Use HTML button for publisher link
+            publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+            
+            # Encode the data for URL (fallback option)
+            encoded_data = base64.b64encode(publisher_json.encode()).decode()
+            publisher_url_with_data = f"{publisher_base_url}?data={encoded_data}"
+            
             st.markdown(f'''
-            <a href="{publisher_url}" target="_blank">
+            <a href="{publisher_base_url}" target="_blank" style="text-decoration: none;">
                 <button class="html-link-btn" style="margin-top: 0.5rem;">
-                    🖨️ Create Biography with Photos
+                    🖨️ Go to Biography Publisher
                 </button>
             </a>
             ''', unsafe_allow_html=True)
+            
+            st.caption("After downloading your data, go to the publisher and use the 'Upload Data' button to create your book.")
+            st.markdown('</div>', unsafe_allow_html=True)
             
             if total_images_export > 0:
                 st.success(f"✅ {total_images_export} photos will be included in your book!")
@@ -2277,10 +2306,10 @@ with st.sidebar:
                 st.info("📸 Add photos to include them in your book!")
             
         else:
-            st.warning("No data to backup yet! Start by answering some questions or uploading photos.")
+            st.warning("No data to export yet! Start by answering some questions or uploading photos.")
         
     else:
-        st.warning("Please log in to backup your data.")
+        st.warning("Please log in to export your data.")
     
     st.divider()
     
@@ -2888,7 +2917,7 @@ with col4:
         st.metric("Total Photos", f"{total_images}")
 
 # ============================================================================
-# SECTION 26: PUBLISH & VAULT SECTION - UPDATED WITH IMAGES
+# SECTION 26: PUBLISH & VAULT SECTION - UPDATED WITH DIRECT DOWNLOAD
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Preserve")
@@ -2932,13 +2961,6 @@ if current_user and current_user != "":
         
         json_data = json.dumps(enhanced_data, indent=2)
         
-        # Encode the data for URL
-        encoded_data = base64.b64encode(json_data.encode()).decode()
-        
-        # Create URL for the publisher
-        publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
-        publisher_url = f"{publisher_base_url}?data={encoded_data}"
-        
         col1, col2 = st.columns(2)
         
         with col1:
@@ -2947,7 +2969,7 @@ if current_user and current_user != "":
             if total_images_export > 0:
                 st.success(f"📚 **{total_stories} stories + {total_images_export} photos**")
                 st.markdown("""
-                Your biography will include:
+                **Your biography will include:**
                 • All your stories formatted beautifully
                 • Photo references with captions
                 • Professional layout and design
@@ -2956,25 +2978,43 @@ if current_user and current_user != "":
             else:
                 st.success(f"📚 **{total_stories} stories**")
                 st.markdown("""
-                Your biography will include:
+                **Your biography will include:**
                 • All your stories formatted beautifully
                 • Professional layout and design
                 • Ready to print or share digitally
                 """)
             
-            # Use HTML button instead of st.link_button
+            # Create a download section
+            st.markdown('<div class="download-container">', unsafe_allow_html=True)
+            st.write("**Step 1: Download your data:**")
+            
+            st.download_button(
+                label="📥 Download Complete Data",
+                data=json_data,
+                file_name=f"MemLife_Biography_Data_{datetime.now().strftime('%Y%m%d')}.json",
+                mime="application/json",
+                use_container_width=True,
+                key="main_download_btn"
+            )
+            
+            st.write("**Step 2: Go to the publisher:**")
+            
+            # Use HTML button for publisher link
+            publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+            
             st.markdown(f'''
-            <a href="{publisher_url}" target="_blank">
-                <button class="html-link-btn">
-                    🖨️ Create Biography
+            <a href="{publisher_base_url}" target="_blank" style="text-decoration: none;">
+                <button class="html-link-btn" style="margin-top: 0.5rem;">
+                    🖨️ Go to Biography Publisher
                 </button>
             </a>
             ''', unsafe_allow_html=True)
             
+            st.caption("After downloading, go to the publisher and use the 'Upload Data' feature.")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             if total_images_export > 0:
-                st.success(f"✅ {total_images_export} photos included as base64 data")
-            else:
-                st.info("📸 Add photos to include them in your book!")
+                st.success(f"✅ {total_images_export} photos included!")
         
         with col2:
             st.markdown("#### 🔐 Secure Vault")
@@ -2987,19 +3027,24 @@ if current_user and current_user != "":
             • Share with family securely
             """)
             
-            # Use HTML button for vault too
+            # Use HTML button for vault
             vault_url = "https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/"
             st.markdown(f'''
-            <a href="{vault_url}" target="_blank">
+            <a href="{vault_url}" target="_blank" style="text-decoration: none;">
                 <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">
                     💾 Go to Secure Vault
                 </button>
             </a>
             ''', unsafe_allow_html=True)
         
-        # Quick backup reminder
+        # Quick instructions
         st.divider()
-        st.info("💡 **Remember:** Use the 'Backup Everything' button in the sidebar to download your complete data to your own device.")
+        st.info("💡 **How to create your book:**")
+        st.write("1. **Download** your complete data using the button above")
+        st.write("2. **Go to** the Biography Publisher using the link above")
+        st.write("3. **Upload** your downloaded JSON file to the publisher")
+        st.write("4. **Customize** your book layout and design")
+        st.write("5. **Export** as PDF or print your biography")
         
     else:
         st.info("📝 **Start writing your story!** Answer some questions first, then come back here to create your book.")
