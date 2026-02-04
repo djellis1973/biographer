@@ -36,7 +36,7 @@ EMAIL_CONFIG = {
 }
 
 # ============================================================================
-# SECTION 3: ENHANCED IMAGE MANAGER WITH BASE64 EXPORT
+# SECTION 3: SIMPLIFIED IMAGE MANAGER
 # ============================================================================
 def get_user_image_folder(user_id):
     """Get or create user's image folder"""
@@ -64,10 +64,7 @@ def save_image_metadata(user_id, session_id, image_info):
         if str(session_id) not in metadata:
             metadata[str(session_id)] = []
         
-        # Check if image with same ID already exists
-        existing_ids = [img.get("id") for img in metadata[str(session_id)]]
-        if image_info["id"] not in existing_ids:
-            metadata[str(session_id)].append(image_info)
+        metadata[str(session_id)].append(image_info)
         
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
@@ -283,64 +280,6 @@ def get_total_user_images(user_id):
             pass
     
     return 0
-
-def get_image_as_base64(image_path):
-    """Get image as base64 encoded string"""
-    try:
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
-    except Exception as e:
-        print(f"Error encoding image {image_path}: {e}")
-    return None
-
-def get_all_images_with_base64(user_id):
-    """Get all images with base64 encoding for export"""
-    all_images = {}
-    
-    metadata_file = f"user_images/{user_id}/image_metadata.json"
-    
-    if os.path.exists(metadata_file):
-        try:
-            with open(metadata_file, 'r') as f:
-                metadata = json.load(f)
-            
-            for session_id_str, images in metadata.items():
-                session_id = int(session_id_str)
-                if session_id not in all_images:
-                    all_images[session_id] = []
-                
-                for img_info in images:
-                    # Get the original image as base64
-                    if os.path.exists(img_info["paths"]["original"]):
-                        base64_data = get_image_as_base64(img_info["paths"]["original"])
-                        
-                        # Get thumbnail as base64 too
-                        thumbnail_base64 = None
-                        if os.path.exists(img_info["paths"]["thumbnail"]):
-                            thumbnail_base64 = get_image_as_base64(img_info["paths"]["thumbnail"])
-                        
-                        if base64_data:
-                            enhanced_image = {
-                                "id": img_info["id"],
-                                "original_filename": img_info["original_filename"],
-                                "saved_filename": img_info["saved_filename"],
-                                "description": img_info.get("description", ""),
-                                "upload_date": img_info["upload_date"],
-                                "session_id": session_id,
-                                "file_size_kb": img_info.get("file_size_kb", 0),
-                                "base64_data": base64_data,
-                                "thumbnail_base64": thumbnail_base64,
-                                "mime_type": f"image/{img_info['saved_filename'].split('.')[-1].lower() if '.' in img_info['saved_filename'] else 'jpeg'}",
-                                "file_path": img_info["paths"]["original"]
-                            }
-                            all_images[session_id].append(enhanced_image)
-            
-        except Exception as e:
-            print(f"Error getting images with base64: {e}")
-    
-    return all_images
-
 # ============================================================================
 # SECTION 4: CSS STYLING AND VISUAL DESIGN
 # ============================================================================
@@ -700,15 +639,6 @@ st.markdown(f"""
     
     .simple-image-btn:hover {{
         background: #45a049;
-    }}
-    
-    /* Direct download container */
-    .download-container {{
-        background: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        border: 2px dashed #3498db;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -2147,9 +2077,9 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # BACKUP & EXPORT - UPDATED WITH DIRECT DOWNLOAD
+    # BACKUP & EXPORT - WORKING VERSION WITH PROPER IMAGE HANDLING
     # ============================================================================
-    st.subheader("💾 Export Everything")
+    st.subheader("💾 Backup Everything")
     
     total_answers = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
     total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
@@ -2168,15 +2098,14 @@ with st.sidebar:
                     "questions": session_data["questions"]
                 }
         
-        # Prepare images data WITH BASE64 ENCODING
-        all_images_with_base64 = get_all_images_with_base64(st.session_state.user_id)
+        # Get image metadata for display
+        total_images_export = total_images
         
-        # Count total images
-        total_images_export = sum(len(images) for images in all_images_with_base64.values())
-        
-        if export_data or all_images_with_base64:
-            # Create complete backup data WITH IMAGES
-            backup_data = {
+        if export_data:
+            # Create TWO versions of the data:
+            
+            # 1. FOR URL TO PUBLISHER (NO IMAGES - KEEP IT SMALL)
+            publisher_data_simple = {
                 "user": st.session_state.user_id,
                 "user_profile": {
                     "first_name": st.session_state.user_account['profile']['first_name'],
@@ -2185,35 +2114,96 @@ with st.sidebar:
                     "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
                 } if st.session_state.user_account else {},
                 "stories": export_data,
-                "images": all_images_with_base64,  # INCLUDES BASE64 ENCODED IMAGES
                 "export_date": datetime.now().isoformat(),
                 "summary": {
                     "total_stories": sum(len(session['questions']) for session in export_data.values()),
                     "total_images": total_images_export,
                     "total_sessions": len(export_data)
                 },
-                "export_type": "complete_with_images_base64",
-                "note": "Images are base64 encoded and included in the JSON file"
+                "export_type": "publisher_ready_no_images",
+                "publisher_note": "Images not included in URL - use download for complete backup"
             }
             
-            backup_json = json.dumps(backup_data, indent=2)
+            publisher_json_simple = json.dumps(publisher_data_simple, indent=2)
             
-            # Create backup button
+            # 2. FOR COMPLETE DOWNLOAD (WITH IMAGES)
+            # First, create a function to get images with base64 for download
+            def get_all_images_with_base64_for_download(user_id):
+                all_images = {}
+                metadata_file = f"user_images/{user_id}/image_metadata.json"
+                
+                if os.path.exists(metadata_file):
+                    try:
+                        with open(metadata_file, 'r') as f:
+                            metadata = json.load(f)
+                        
+                        for session_id_str, images in metadata.items():
+                            session_id = int(session_id_str)
+                            if session_id not in all_images:
+                                all_images[session_id] = []
+                            
+                            for img_info in images:
+                                if os.path.exists(img_info["paths"]["original"]):
+                                    try:
+                                        with open(img_info["paths"]["original"], "rb") as img_file:
+                                            base64_data = base64.b64encode(img_file.read()).decode('utf-8')
+                                        
+                                        all_images[session_id].append({
+                                            "original_filename": img_info["original_filename"],
+                                            "description": img_info.get("description", ""),
+                                            "upload_date": img_info["upload_date"],
+                                            "base64_data": base64_data,
+                                            "mime_type": f"image/{img_info['saved_filename'].split('.')[-1].lower() if '.' in img_info['saved_filename'] else 'jpeg'}"
+                                        })
+                                    except Exception as e:
+                                        print(f"Error encoding image {img_info['original_filename']}: {e}")
+                    
+                    except Exception as e:
+                        print(f"Error loading image metadata: {e}")
+                
+                return all_images
+            
+            # Get images with base64 for download
+            all_images_with_base64 = get_all_images_with_base64_for_download(st.session_state.user_id)
+            total_images_with_data = sum(len(images) for images in all_images_with_base64.values())
+            
+            complete_data = {
+                "user": st.session_state.user_id,
+                "user_profile": {
+                    "first_name": st.session_state.user_account['profile']['first_name'],
+                    "last_name": st.session_state.user_account['profile']['last_name'],
+                    "email": st.session_state.user_account['profile']['email'],
+                    "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
+                } if st.session_state.user_account else {},
+                "stories": export_data,
+                "images": all_images_with_base64,
+                "export_date": datetime.now().isoformat(),
+                "summary": {
+                    "total_stories": sum(len(session['questions']) for session in export_data.values()),
+                    "total_images": total_images_with_data,
+                    "total_sessions": len(export_data)
+                },
+                "export_type": "complete_with_images_base64"
+            }
+            
+            complete_json = json.dumps(complete_data, indent=2)
+            
+            # Create backup button for complete data
             st.write("**Download complete backup to your device:**")
             
-            # Main backup button
+            # Main backup button (with images)
             st.download_button(
-                label="💾 Download Everything (Stories + Photos)",
-                data=backup_json,
-                file_name=f"MemLife_Backup_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
+                label="💾 Download Complete Backup (Stories + Photos)",
+                data=complete_json,
+                file_name=f"MemLife_Complete_Backup_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
                 mime="application/json",
                 use_container_width=True,
-                key="download_backup_btn",
+                key="download_complete_backup_btn",
                 help="Download everything: stories + base64 encoded photos"
             )
             
             # Show what's included
-            with st.expander("📋 What's included?", expanded=False):
+            with st.expander("📋 What's included in complete backup?", expanded=False):
                 if export_data:
                     st.success("✅ **Stories Included:**")
                     for session_id, session_data in export_data.items():
@@ -2227,89 +2217,46 @@ with st.sidebar:
                         session_title = next((s["title"] for s in SESSIONS if str(s["id"]) == str(session_id)), f"Session {session_id}")
                         st.caption(f"• {session_title} - {image_count} photos")
                     
-                    st.info(f"📸 Total: {total_images_export} photos included as base64 data")
+                    st.info(f"📸 Total: {total_images_with_data} photos included as base64 data")
                 
-                st.info("💡 All photos are base64 encoded and embedded in the JSON file.")
+                st.info("💡 All photos are base64 encoded and embedded in the JSON file for complete backup.")
             
-            # PUBLISH SECTION - UPDATED WITH DIRECT DOWNLOAD OPTION
+            # PUBLISH SECTION - WORKING VERSION
             st.divider()
             st.subheader("🖨️ Create Your Book")
-            
-            # Create special publisher data WITH BASE64 ENCODED IMAGES
-            publisher_data = {
-                "user": st.session_state.user_id,
-                "user_profile": {
-                    "first_name": st.session_state.user_account['profile']['first_name'],
-                    "last_name": st.session_state.user_account['profile']['last_name'],
-                    "email": st.session_state.user_account['profile']['email'],
-                    "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
-                } if st.session_state.user_account else {},
-                "stories": export_data,
-                "images": all_images_with_base64,  # INCLUDES BASE64 ENCODED IMAGES
-                "export_date": datetime.now().isoformat(),
-                "summary": {
-                    "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                    "total_images": total_images_export,
-                    "total_sessions": len(export_data)
-                },
-                "export_type": "publisher_ready_with_images",
-                "publisher_note": "Includes base64 encoded photos for book formatting"
-            }
-            
-            publisher_json = json.dumps(publisher_data, indent=2)
             
             if total_images_export > 0:
                 st.success(f"📚 **Create a beautiful book with:**")
                 st.write(f"• {sum(len(session['questions']) for session in export_data.values())} stories")
-                st.write(f"• {total_images_export} photos with captions")
-                st.write("• Professional layout with images")
+                st.write(f"• {total_images_export} photo references")
+                st.write("• Professional layout and design")
             else:
                 st.info(f"📚 Create a beautiful book with {sum(len(session['questions']) for session in export_data.values())} stories")
             
-            # DIRECT DOWNLOAD FOR PUBLISHER DATA
-            st.markdown('<div class="download-container">', unsafe_allow_html=True)
-            st.write("**Step 1: Download your data for the publisher:**")
-            
-            st.download_button(
-                label="📥 Download Publisher Data",
-                data=publisher_json,
-                file_name=f"MemLife_Publisher_Export_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
-                mime="application/json",
-                use_container_width=True,
-                key="download_publisher_data_btn",
-                help="Download your data to upload to the publisher"
-            )
-            
-            st.write("**Step 2: Go to the publisher and upload this file:**")
-            
-            # Use HTML button for publisher link
+            # Encode SIMPLE data for publisher URL (NO images)
+            encoded_data = base64.b64encode(publisher_json_simple.encode()).decode()
             publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+            publisher_url = f"{publisher_base_url}?data={encoded_data}"
             
-            # Encode the data for URL (fallback option)
-            encoded_data = base64.b64encode(publisher_json.encode()).decode()
-            publisher_url_with_data = f"{publisher_base_url}?data={encoded_data}"
-            
+            # Use HTML button for publishing
             st.markdown(f'''
-            <a href="{publisher_base_url}" target="_blank" style="text-decoration: none;">
+            <a href="{publisher_url}" target="_blank">
                 <button class="html-link-btn" style="margin-top: 0.5rem;">
-                    🖨️ Go to Biography Publisher
+                    🖨️ Create Biography
                 </button>
             </a>
             ''', unsafe_allow_html=True)
             
-            st.caption("After downloading your data, go to the publisher and use the 'Upload Data' button to create your book.")
-            st.markdown('</div>', unsafe_allow_html=True)
-            
             if total_images_export > 0:
-                st.success(f"✅ {total_images_export} photos will be included in your book!")
+                st.info(f"📸 Note: {total_images_export} photo references included (images will need to be re-uploaded in publisher)")
             else:
                 st.info("📸 Add photos to include them in your book!")
             
         else:
-            st.warning("No data to export yet! Start by answering some questions or uploading photos.")
+            st.warning("No data to backup yet! Start by answering some questions or uploading photos.")
         
     else:
-        st.warning("Please log in to export your data.")
+        st.warning("Please log in to backup your data.")
     
     st.divider()
     
@@ -2917,7 +2864,7 @@ with col4:
         st.metric("Total Photos", f"{total_images}")
 
 # ============================================================================
-# SECTION 26: PUBLISH & VAULT SECTION - UPDATED WITH DIRECT DOWNLOAD
+# SECTION 26: PUBLISH & VAULT SECTION - UPDATED
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Preserve")
@@ -2937,84 +2884,65 @@ if current_user and current_user != "":
                 "questions": session_data["questions"]
             }
     
-    # Prepare images WITH BASE64
-    all_images_with_base64 = get_all_images_with_base64(st.session_state.user_id)
-    total_images_export = sum(len(images) for images in all_images_with_base64.values())
+    # Get image count
+    total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
     
-    if export_data or all_images_with_base64:
-        # Count totals
-        total_stories = sum(len(session['questions']) for session in export_data.values())
-        
-        # Create enhanced JSON data WITH IMAGES
+    if export_data:
+        # Create enhanced JSON data
         enhanced_data = {
             "user": current_user,
             "stories": export_data,
-            "images": all_images_with_base64,  # INCLUDES BASE64 ENCODED IMAGES
             "export_date": datetime.now().isoformat(),
             "summary": {
-                "total_stories": total_stories,
-                "total_images": total_images_export,
+                "total_stories": sum(len(session['questions']) for session in export_data.values()),
+                "total_images": total_images,
                 "total_sessions": len(export_data)
-            },
-            "export_type": "complete_with_images_base64"
+            }
         }
         
         json_data = json.dumps(enhanced_data, indent=2)
+        
+        # Encode the data for URL
+        encoded_data = base64.b64encode(json_data.encode()).decode()
+        
+        # Create URL for the publisher
+        publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+        publisher_url = f"{publisher_base_url}?data={encoded_data}"
         
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("#### 🖨️ Create Your Book")
             
-            if total_images_export > 0:
-                st.success(f"📚 **{total_stories} stories + {total_images_export} photos**")
+            if total_images > 0:
+                st.success(f"📚 **{sum(len(session['questions']) for session in export_data.values())} stories + {total_images} photo references**")
                 st.markdown("""
-                **Your biography will include:**
+                Your biography will include:
                 • All your stories formatted beautifully
                 • Photo references with captions
                 • Professional layout and design
                 • Ready to print or share digitally
                 """)
             else:
-                st.success(f"📚 **{total_stories} stories**")
+                st.success(f"📚 **{sum(len(session['questions']) for session in export_data.values())} stories**")
                 st.markdown("""
-                **Your biography will include:**
+                Your biography will include:
                 • All your stories formatted beautifully
                 • Professional layout and design
                 • Ready to print or share digitally
                 """)
             
-            # Create a download section
-            st.markdown('<div class="download-container">', unsafe_allow_html=True)
-            st.write("**Step 1: Download your data:**")
-            
-            st.download_button(
-                label="📥 Download Complete Data",
-                data=json_data,
-                file_name=f"MemLife_Biography_Data_{datetime.now().strftime('%Y%m%d')}.json",
-                mime="application/json",
-                use_container_width=True,
-                key="main_download_btn"
-            )
-            
-            st.write("**Step 2: Go to the publisher:**")
-            
-            # Use HTML button for publisher link
-            publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
-            
+            # Use HTML button instead of st.link_button
             st.markdown(f'''
-            <a href="{publisher_base_url}" target="_blank" style="text-decoration: none;">
-                <button class="html-link-btn" style="margin-top: 0.5rem;">
-                    🖨️ Go to Biography Publisher
+            <a href="{publisher_url}" target="_blank">
+                <button class="html-link-btn">
+                    🖨️ Create Biography
                 </button>
             </a>
             ''', unsafe_allow_html=True)
             
-            st.caption("After downloading, go to the publisher and use the 'Upload Data' feature.")
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            if total_images_export > 0:
-                st.success(f"✅ {total_images_export} photos included!")
+            if total_images > 0:
+                st.caption(f"📸 {total_images} photo references will be included")
         
         with col2:
             st.markdown("#### 🔐 Secure Vault")
@@ -3027,30 +2955,24 @@ if current_user and current_user != "":
             • Share with family securely
             """)
             
-            # Use HTML button for vault
+            # Use HTML button for vault too
             vault_url = "https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/"
             st.markdown(f'''
-            <a href="{vault_url}" target="_blank" style="text-decoration: none;">
+            <a href="{vault_url}" target="_blank">
                 <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">
                     💾 Go to Secure Vault
                 </button>
             </a>
             ''', unsafe_allow_html=True)
         
-        # Quick instructions
+        # Quick backup reminder
         st.divider()
-        st.info("💡 **How to create your book:**")
-        st.write("1. **Download** your complete data using the button above")
-        st.write("2. **Go to** the Biography Publisher using the link above")
-        st.write("3. **Upload** your downloaded JSON file to the publisher")
-        st.write("4. **Customize** your book layout and design")
-        st.write("5. **Export** as PDF or print your biography")
+        st.info("💡 **Remember:** Use the 'Backup Everything' button in the sidebar to download your complete data to your own device.")
         
     else:
         st.info("📝 **Start writing your story!** Answer some questions first, then come back here to create your book.")
 else:
     st.info("👤 **Please log in to publish your biography**")
-
 # ============================================================================
 # SECTION 27: FOOTER
 # ============================================================================
