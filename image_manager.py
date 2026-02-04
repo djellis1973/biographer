@@ -307,15 +307,15 @@ def get_images_for_prompt(user_id, session_id):
     if not images:
         return ""
     
-    prompt_text = "\n\nUSER HAS UPLOADED THESE RELATED IMAGES:\n"
+    prompt_text = "\n\n📸 **USER HAS UPLOADED THESE PHOTOS:**\n"
     
     for img in images:
-        prompt_text += f"- Image: {img['original_filename']}"
+        prompt_text += f"- {img['original_filename']}"
         if img.get('description'):
             prompt_text += f" - {img['description']}"
-        prompt_text += f" (Uploaded: {img['upload_date'][:10]})\n"
+        prompt_text += "\n"
     
-    prompt_text += "\nWhen appropriate, reference these images to prompt richer descriptions. Ask questions like: 'Can you describe what's happening in the photo of...?' or 'What memories does this image bring back?'"
+    prompt_text += "\n**When relevant, ask about these photos.**\n"
     
     return prompt_text
 
@@ -335,18 +335,8 @@ def export_images_data(user_id, session_id):
             "description": img.get("description", ""),
             "upload_date": img["upload_date"],
             "dimensions": img["dimensions"],
-            # For book generation, we might want to include paths or base64 encoded images
-            "path": img["paths"]["original"],
-            "thumbnail_path": img["paths"]["thumbnail"]
+            "session_id": session_id
         }
-        
-        # Optionally include base64 encoded thumbnail for preview
-        try:
-            with open(img["paths"]["thumbnail"], "rb") as f:
-                export_img["thumbnail_base64"] = base64.b64encode(f.read()).decode()
-        except:
-            export_img["thumbnail_base64"] = None
-        
         export_data.append(export_img)
     
     return export_data
