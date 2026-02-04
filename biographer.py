@@ -1568,6 +1568,47 @@ st.markdown(f"""
 # ============================================================================
 # SECTION 17: SIDEBAR - USER PROFILE AND SETTINGS
 # ============================================================================
+
+    # ============================================================================
+    # DEBUG OPTIONS (Temporary)
+    # ============================================================================
+    st.divider()
+    with st.expander("🔧 Debug Options", expanded=False):
+        debug_mode = st.toggle("Show Debug Info", value=False, key="debug_toggle")
+        if debug_mode != st.session_state.get('debug_mode', False):
+            st.session_state.debug_mode = debug_mode
+            st.rerun()
+        
+        if st.button("Test Export Data", key="test_export"):
+            # Test what gets exported
+            test_export = {}
+            for session in SESSIONS:
+                session_id = session["id"]
+                session_data = st.session_state.responses.get(session_id, {})
+                
+                if session_data.get("questions"):
+                    test_export[str(session_id)] = {
+                        "title": session["title"],
+                        "questions": session_data["questions"],
+                        "image_count": 0
+                    }
+                    
+                    if st.session_state.user_id:
+                        images = image_manager.get_session_images(st.session_state.user_id, session_id)
+                        test_export[str(session_id)]["image_count"] = len(images)
+                        if images:
+                            test_export[str(session_id)]["sample_image"] = {
+                                "filename": images[0]["original_filename"],
+                                "description": images[0].get("description", "")
+                            }
+            
+            st.json(test_export)
+            
+        if st.button("Test Image Prompt", key="test_image_prompt"):
+            if st.session_state.user_id and st.session_state.current_session is not None:
+                current_session_id = SESSIONS[st.session_state.current_session]["id"]
+                image_context = image_manager.get_images_for_prompt(st.session_state.user_id, current_session_id)
+                st.code(image_context, language="markdown")
 with st.sidebar:
     # User Profile Header with Account Info
     st.header("👤 Your Profile")
