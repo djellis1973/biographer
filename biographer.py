@@ -251,13 +251,15 @@ def get_images_for_prompt_simple(user_id, session_id):
             prompt_text += f" - {img['description']}"
         prompt_text += "\n"
     
-    prompt_text += "\n**Use these photos to ask specific questions about:**
+    prompt_text += """
+**Use these photos to ask specific questions about:
 1. Who is in the photo?
 2. Where was it taken?
 3. When was it taken?
 4. What's happening in the photo?
 5. What emotions does it bring up?
-6. What happened before/after this moment?**\n"
+6. What happened before/after this moment?**
+"""
     
     return prompt_text
 
@@ -278,7 +280,6 @@ def get_total_user_images(user_id):
             pass
     
     return 0
-
 # ============================================================================
 # SECTION 4: CSS STYLING AND VISUAL DESIGN
 # ============================================================================
