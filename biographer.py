@@ -1457,17 +1457,35 @@ def get_system_prompt():
     image_context = ""
     if st.session_state.user_id and st.session_state.current_session is not None:
         current_session_id = SESSIONS[st.session_state.current_session]["id"]
-        image_context = image_manager.get_images_for_prompt(
-            st.session_state.user_id, 
-            current_session_id
-        )
+        images = image_manager.get_session_images(st.session_state.user_id, current_session_id)
+        
+        if images:
+            image_context = "\n\n📸 **USER HAS UPLOADED PHOTOS FOR THIS SESSION:**\n"
+            for img in images[:3]:  # Show first 3 images
+                image_context += f"- Photo: {img['original_filename']}\n"
+                if img.get('description'):
+                    image_context += f"  Description: {img['description']}\n"
+            image_context += "\n**Use these photos in your questions when relevant!**\n"
+            image_context += "Example questions:\n"
+            image_context += "• 'You mentioned [topic]. Does any of these photos relate to that memory?'\n"
+            image_context += "• 'Can you describe what was happening when this photo was taken?'\n"
+            image_context += "• 'What emotions does this image bring back?'\n"
+    
+    # DEBUG: Show what the AI is seeing
+    debug_info = ""
+    if st.session_state.get('debug_mode', False):
+        debug_info = f"\n\n[DEBUG INFO - Not shown to user]\n"
+        debug_info += f"Historical context present: {'Yes' if historical_context else 'No'}\n"
+        debug_info += f"Image context present: {'Yes' if image_context else 'No'}\n"
+        if image_context:
+            debug_info += f"Number of images: {len(images) if 'images' in locals() else 0}\n"
     
     if st.session_state.ghostwriter_mode:
-        return f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
+        prompt = f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
-{historical_context}{image_context}
+{historical_context}{image_context}{debug_info}
 
 YOUR APPROACH:
 1. Listen like an archivist
@@ -1480,12 +1498,24 @@ YOUR APPROACH:
 Tone: Literary but not pretentious. Serious but not solemn.
 
 IMPORTANT: When appropriate, reference historical context and uploaded images to prompt deeper reflection."""
+        
+        # DEBUG: Print to console
+        print(f"\n{'='*60}")
+        print(f"AI PROMPT DEBUG - Session {current_session['id']}")
+        print(f"Topic: {current_question}")
+        print(f"Historical context: {'YES' if historical_context else 'NO'}")
+        print(f"Image context: {'YES' if image_context else 'NO'}")
+        if image_context:
+            print(f"Number of images: {len(images)}")
+        print(f"{'='*60}\n")
+        
+        return prompt
     else:
-        return f"""You are a warm, professional biographer helping document a life story.
+        prompt = f"""You are a warm, professional biographer helping document a life story.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
-{historical_context}{image_context}
+{historical_context}{image_context}{debug_info}
 
 Please:
 1. Listen actively
@@ -1496,6 +1526,8 @@ Please:
 Tone: Kind, curious, professional
 
 Note: Reference historical events and uploaded images when relevant to prompt richer stories."""
+        
+        return prompt
 
 # ============================================================================
 # SECTION 15: MAIN APP FLOW CONTROL
