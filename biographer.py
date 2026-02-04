@@ -2170,8 +2170,30 @@ with st.sidebar:
             st.divider()
             st.subheader("🖨️ Create Your Book")
             
+            # Create special publisher data WITH IMAGES
+            publisher_data = {
+                "user": st.session_state.user_id,
+                "user_profile": {
+                    "first_name": st.session_state.user_account['profile']['first_name'],
+                    "last_name": st.session_state.user_account['profile']['last_name'],
+                    "email": st.session_state.user_account['profile']['email'],
+                    "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
+                } if st.session_state.user_account else {},
+                "stories": export_data,
+                "images": image_data,  # THIS IS CRITICAL - SEND IMAGES TO PUBLISHER
+                "export_date": datetime.now().isoformat(),
+                "summary": {
+                    "total_stories": sum(len(session['questions']) for session in export_data.values()),
+                    "total_images": sum(len(images) for images in image_data.values()),
+                    "total_sessions": len(export_data)
+                },
+                "publisher_note": "Includes photo references for book formatting"
+            }
+            
+            publisher_json = json.dumps(publisher_data, indent=2)
+            
             # Encode data for publisher
-            encoded_data = base64.b64encode(backup_json.encode()).decode()
+            encoded_data = base64.b64encode(publisher_json.encode()).decode()
             publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
             publisher_url = f"{publisher_base_url}?data={encoded_data}"
             
