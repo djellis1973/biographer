@@ -1822,71 +1822,81 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # EXPORT OPTIONS (FIXED - No st.link_button, using HTML button instead)
-    # ============================================================================
-    st.subheader("📤 Export Options")
+# EXPORT OPTIONS (FIXED - No st.link_button, using HTML button instead)
+# ============================================================================
+st.subheader("📤 Export Options")
+
+total_answers = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
+st.caption(f"Total answers: {total_answers}")
+
+# Prepare data for export WITH IMAGES
+export_data = {}
+for session in SESSIONS:
+    session_id = session["id"]
+    session_data = st.session_state.responses.get(session_id, {})
+    if session_data.get("questions"):
+        export_data[str(session_id)] = {
+            "title": session["title"],
+            "questions": session_data["questions"]
+        }
+        
+        # ADD IMAGES TO EXPORT DATA
+        if st.session_state.logged_in and st.session_state.user_id:
+            try:
+                images = image_manager.export_images_data(st.session_state.user_id, session_id)
+                if images:
+                    export_data[str(session_id)]["images"] = images
+            except Exception as e:
+                print(f"Error exporting images: {e}")
+
+# Create JSON data
+if export_data:
+    json_data = json.dumps({
+        "user": st.session_state.user_id,
+        "user_profile": st.session_state.user_account.get('profile', {}) if st.session_state.user_account else {},
+        "stories": export_data,
+        "export_date": datetime.now().isoformat()
+    }, indent=2)
     
-    total_answers = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
-    st.caption(f"Total answers: {total_answers}")
+    # Encode the data for URL
+    encoded_data = base64.b64encode(json_data.encode()).decode()
     
-    # Prepare data for export
-    export_data = {}
-    for session in SESSIONS:
-        session_id = session["id"]
-        session_data = st.session_state.responses.get(session_id, {})
-        if session_data.get("questions"):
-            export_data[str(session_id)] = {
-                "title": session["title"],
-                "questions": session_data["questions"]
-            }
-            
-            # ADD IMAGES TO EXPORT DATA
-            if st.session_state.logged_in and st.session_state.user_id:
-                try:
-                    images = image_manager.export_images_data(st.session_state.user_id, session_id)
-                    if images:
-                        export_data[str(session_id)]["images"] = images
-                except Exception as e:
-                    print(f"Error exporting images: {e}")
+    # Create URL with the data
+    publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+    publisher_url = f"{publisher_base_url}?data={encoded_data}"
     
-    # Create JSON data
-    if export_data:
-        json_data = json.dumps({
-            "user": st.session_state.user_id,
-            "stories": export_data,
-            "export_date": datetime.now().isoformat()
-        }, indent=2)
-        
-        # Encode the data for URL
-        encoded_data = base64.b64encode(json_data.encode()).decode()
-        
-        # Create URL with the data
-        publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
-        publisher_url = f"{publisher_base_url}?data={encoded_data}"
-        
-        # Download button
-        st.download_button(
-            label="📥 Download as JSON",
-            data=json_data,
-            file_name=f"LifeStory_{st.session_state.user_id}.json",
-            mime="application/json",
-            use_container_width=True,
-            key="download_json_btn"
-        )
-        
-        # Use HTML button instead of st.link_button to avoid errors
-        st.markdown(f'''
-        <a href="{publisher_url}" target="_blank">
-            <button class="html-link-btn">
-                🖨️ Publish Biography
-            </button>
-        </a>
-        ''', unsafe_allow_html=True)
-        st.caption("Format your biography professionally")
+    # Count total images for display
+    total_images = 0
+    for session_data in export_data.values():
+        if "images" in session_data:
+            total_images += len(session_data["images"])
+    
+    # Download button
+    st.download_button(
+        label="📥 Download as JSON",
+        data=json_data,
+        file_name=f"LifeStory_{st.session_state.user_id}.json",
+        mime="application/json",
+        use_container_width=True,
+        key="download_json_btn"
+    )
+    
+    # Use HTML button instead of st.link_button to avoid errors
+    st.markdown(f'''
+    <a href="{publisher_url}" target="_blank">
+        <button class="html-link-btn">
+            🖨️ Publish Biography
+        </button>
+    </a>
+    ''', unsafe_allow_html=True)
+    
+    # Show image count if available
+    if total_images > 0:
+        st.caption(f"✅ Includes {total_images} image(s) for your biography")
     else:
-        st.warning("No responses to export yet!")
-    
-    st.divider()
+        st.caption("Format your biography professionally")
+else:
+    st.warning("No responses to export yet!")
     
     # ============================================================================
     # DANGEROUS ACTIONS WITH CONFIRMATION
