@@ -2077,14 +2077,14 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # SIMPLE EXPORT OPTIONS WITH IMAGES
+    # BACKUP & EXPORT
     # ============================================================================
-    st.subheader("📤 Export Options")
+    st.subheader("💾 Backup Everything")
     
     total_answers = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
     total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
     
-    st.caption(f"Total answers: {total_answers} • Total photos: {total_images}")
+    st.caption(f"📝 {total_answers} stories • 📸 {total_images} photos")
     
     if st.session_state.logged_in and st.session_state.user_id:
         # Prepare stories data
@@ -2114,109 +2114,87 @@ with st.sidebar:
                     })
         
         if export_data or image_data:
-            # Create complete export data
-            complete_data = {
+            # Create complete backup data
+            backup_data = {
                 "user": st.session_state.user_id,
+                "user_profile": {
+                    "first_name": st.session_state.user_account['profile']['first_name'],
+                    "last_name": st.session_state.user_account['profile']['last_name'],
+                    "email": st.session_state.user_account['profile']['email'],
+                    "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
+                } if st.session_state.user_account else {},
                 "stories": export_data,
                 "images": image_data,
                 "export_date": datetime.now().isoformat(),
                 "summary": {
                     "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                    "total_images": sum(len(images) for images in image_data.values())
+                    "total_images": sum(len(images) for images in image_data.values()),
+                    "total_sessions": len(export_data)
                 }
             }
             
-            json_data = json.dumps(complete_data, indent=2)
+            backup_json = json.dumps(backup_data, indent=2)
             
-            # Encode the data for URL
-            encoded_data = base64.b64encode(json_data.encode()).decode()
+            # Create backup button
+            st.write("**Download complete backup to your device:**")
             
-            # Create URL with the data
+            # Main backup button
+            st.download_button(
+                label="💾 Download Backup",
+                data=backup_json,
+                file_name=f"MemLife_Backup_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
+                mime="application/json",
+                use_container_width=True,
+                key="download_backup_btn",
+                help="Download everything: stories + photo references"
+            )
+            
+            # Show what's included
+            with st.expander("📋 What's included?", expanded=False):
+                if export_data:
+                    st.success("✅ **Stories Included:**")
+                    for session_id, session_data in export_data.items():
+                        story_count = len(session_data['questions'])
+                        st.caption(f"• Session {session_id}: {session_data['title']} - {story_count} stories")
+                
+                if image_data:
+                    st.success("✅ **Photo References Included:**")
+                    for session_id, images in image_data.items():
+                        image_count = len(images)
+                        session_title = next((s["title"] for s in SESSIONS if str(s["id"]) == session_id), f"Session {session_id}")
+                        st.caption(f"• {session_title} - {image_count} photos")
+                
+                st.info("💡 Photo references include filenames, descriptions, and dates.")
+            
+            # PUBLISH SECTION
+            st.divider()
+            st.subheader("🖨️ Create Your Book")
+            
+            # Encode data for publisher
+            encoded_data = base64.b64encode(backup_json.encode()).decode()
             publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
             publisher_url = f"{publisher_base_url}?data={encoded_data}"
             
-            # Download buttons in columns
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Stories-only JSON
-                stories_only = {
-                    "user": st.session_state.user_id,
-                    "stories": export_data,
-                    "export_date": datetime.now().isoformat()
-                }
-                stories_json = json.dumps(stories_only, indent=2)
-                
-                st.download_button(
-                    label="📥 Stories Only",
-                    data=stories_json,
-                    file_name=f"MemLife_Stories_{st.session_state.user_id}.json",
-                    mime="application/json",
-                    use_container_width=True,
-                    key="download_stories_btn",
-                    help="Download only the stories (text) as JSON"
-                )
-            
-            with col2:
-                # Complete data with images
-                st.download_button(
-                    label="📊 Complete Data",
-                    data=json_data,
-                    file_name=f"MemLife_Complete_{st.session_state.user_id}.json",
-                    mime="application/json",
-                    use_container_width=True,
-                    key="download_complete_btn",
-                    help="Download stories + image metadata"
-                )
-            
-            # Image export if there are images
             if total_images > 0:
-                st.divider()
-                st.write("**📸 Photo Export**")
-                
-                # Create simple image list
-                all_images = []
-                for session in SESSIONS:
-                    session_id = session["id"]
-                    images = get_session_images(st.session_state.user_id, session_id)
-                    for img in images:
-                        all_images.append({
-                            "session": session_id,
-                            "session_title": session["title"],
-                            "filename": img["original_filename"],
-                            "description": img.get("description", ""),
-                            "upload_date": img["upload_date"]
-                        })
-                
-                if all_images:
-                    image_list_json = json.dumps(all_images, indent=2)
-                    if st.button("📋 Export Image List", use_container_width=True):
-                        st.download_button(
-                            label="⬇️ Download Image Catalog",
-                            data=image_list_json,
-                            file_name=f"MemLife_Images_{st.session_state.user_id}.json",
-                            mime="application/json",
-                            use_container_width=True,
-                            key="download_image_catalog"
-                        )
+                st.info(f"📚 Create a beautiful book with {total_answers} stories and {total_images} photo references")
+            else:
+                st.info(f"📚 Create a beautiful book with {total_answers} stories")
             
-            st.divider()
-            
-            # Use HTML button instead of st.link_button
+            # Use HTML button for publishing
             st.markdown(f'''
             <a href="{publisher_url}" target="_blank">
-                <button class="html-link-btn">
-                    🖨️ Publish Biography (with Photos)
+                <button class="html-link-btn" style="margin-top: 0.5rem;">
+                    🖨️ Create Biography
                 </button>
             </a>
             ''', unsafe_allow_html=True)
-            st.caption("Create a beautiful book with your stories and photo references")
+            st.caption("Photo references will be included in your book")
             
         else:
-            st.warning("No data to export yet! Start by answering some questions or uploading photos.")
+            st.warning("No data to backup yet! Start by answering some questions or uploading photos.")
         
     else:
-        st.warning("Please log in to export your data.")
+        st.warning("Please log in to backup your data.")
     
     st.divider()
     
@@ -2824,10 +2802,10 @@ with col4:
         st.metric("Total Photos", f"{total_images}")
 
 # ============================================================================
-# SECTION 26: PUBLISH & VAULT SECTION
+# SECTION 26: PUBLISH & VAULT SECTION - UPDATED
 # ============================================================================
 st.divider()
-st.subheader("📘 Publish & Save Your Biography")
+st.subheader("📘 Publish & Preserve")
 
 # Get the current user's data
 current_user = st.session_state.get('user_id', '')
@@ -2886,46 +2864,50 @@ if current_user and current_user != "":
         publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
         publisher_url = f"{publisher_base_url}?data={encoded_data}"
         
-        st.success(f"✅ **{total_stories} stories" + (f" + {total_images} photos" if total_images > 0 else "") + " ready to publish!**")
-        
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("#### 🖨️ Create Your Book")
-            st.markdown(f"""
-            Generate a beautiful, formatted biography including your photos.
             
-            Your enhanced book will include:
-            • Professional formatting with images
-            • Table of contents
-            • All your stories organized
-            • Photo captions and references
-            • Ready to print or share
-            """)
+            if total_images > 0:
+                st.success(f"📚 **{total_stories} stories + {total_images} photos**")
+                st.markdown("""
+                Your biography will include:
+                • All your stories formatted beautifully
+                • Photo references with captions
+                • Professional layout and design
+                • Ready to print or share digitally
+                """)
+            else:
+                st.success(f"📚 **{total_stories} stories**")
+                st.markdown("""
+                Your biography will include:
+                • All your stories formatted beautifully
+                • Professional layout and design
+                • Ready to print or share digitally
+                """)
             
             # Use HTML button instead of st.link_button
             st.markdown(f'''
             <a href="{publisher_url}" target="_blank">
                 <button class="html-link-btn">
-                    🖨️ Publish Biography
+                    🖨️ Create Biography
                 </button>
             </a>
             ''', unsafe_allow_html=True)
             
             if total_images > 0:
-                st.info(f"📸 {total_images} photos will be included as references in your book")
+                st.caption(f"📸 {total_images} photo references will be included")
         
         with col2:
-            st.markdown("#### 🔐 Save to Your Vault")
+            st.markdown("#### 🔐 Secure Vault")
             st.markdown("""
-            **Complete preservation:**
+            **Preserve everything forever:**
             
-            1. Generate your enhanced biography
-            2. Download the formatted PDF
-            3. Save all your stories and photos
-            4. Store in your secure digital vault
-            
-            Your vault preserves everything forever.
+            • Store your complete biography
+            • Keep all photo references safe
+            • Access from anywhere
+            • Share with family securely
             """)
             
             # Use HTML button for vault too
@@ -2938,23 +2920,14 @@ if current_user and current_user != "":
             </a>
             ''', unsafe_allow_html=True)
         
-        # Backup download
-        with st.expander("📥 Download Backup"):
-            st.download_button(
-                label="Download Complete Data",
-                data=json_data,
-                file_name=f"{current_user}_complete_backup.json",
-                mime="application/json",
-                use_container_width=True,
-                key="backup_download_btn"
-            )
-            st.caption("Includes stories + photo metadata")
-            
+        # Quick backup reminder
+        st.divider()
+        st.info("💡 **Remember:** Use the 'Backup Everything' button in the sidebar to download your complete data to your own device.")
+        
     else:
-        st.info("📝 **Start writing your story!** Answer some questions first, then come back here.")
+        st.info("📝 **Start writing your story!** Answer some questions first, then come back here to create your book.")
 else:
     st.info("👤 **Please log in to publish your biography**")
-
 # ============================================================================
 # SECTION 27: FOOTER
 # ============================================================================
