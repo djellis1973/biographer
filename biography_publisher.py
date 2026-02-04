@@ -1,4 +1,4 @@
-# biography_publisher.py - BEAUTIFUL BIOGRAPHY PUBLISHER WITH IMAGES
+# biography_publisher.py - BEAUTIFUL BIOGRAPHY PUBLISHER WITH IMAGES 1
 import streamlit as st
 import json
 import base64
