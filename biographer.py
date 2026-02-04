@@ -16,10 +16,6 @@ import secrets
 import string
 import base64  # For encoding export data
 import pandas as pd  # ADDED: For CSV handling of historical events
-import shutil  # ADDED: For image management
-import uuid  # ADDED: For image management
-from PIL import Image  # ADDED: For image management
-import io  # ADDED: For image management
 
 # Initialize OpenAI client
 client = OpenAI(api_key=st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY")))
@@ -36,258 +32,12 @@ EMAIL_CONFIG = {
 }
 
 # ============================================================================
-# SECTION 3: SIMPLIFIED IMAGE MANAGER
-# ============================================================================
-def get_user_image_folder(user_id):
-    """Get or create user's image folder"""
-    folder_path = f"user_images/{user_id}"
-    os.makedirs(folder_path, exist_ok=True)
-    return folder_path
-
-def get_session_image_folder(user_id, session_id):
-    """Get or create session-specific image folder"""
-    folder_path = f"user_images/{user_id}/session_{session_id}"
-    os.makedirs(folder_path, exist_ok=True)
-    return folder_path
-
-def save_image_metadata(user_id, session_id, image_info):
-    """Save image metadata to JSON file"""
-    metadata_file = f"user_images/{user_id}/image_metadata.json"
-    
-    try:
-        if os.path.exists(metadata_file):
-            with open(metadata_file, 'r') as f:
-                metadata = json.load(f)
-        else:
-            metadata = {}
-        
-        if str(session_id) not in metadata:
-            metadata[str(session_id)] = []
-        
-        metadata[str(session_id)].append(image_info)
-        
-        with open(metadata_file, 'w') as f:
-            json.dump(metadata, f, indent=2)
-        
-        return True
-    except Exception as e:
-        print(f"Error saving image metadata: {e}")
-        return False
-
-def get_session_images(user_id, session_id):
-    """Get all images for a specific session"""
-    metadata_file = f"user_images/{user_id}/image_metadata.json"
-    
-    if os.path.exists(metadata_file):
-        try:
-            with open(metadata_file, 'r') as f:
-                metadata = json.load(f)
-            
-            session_key = str(session_id)
-            if session_key in metadata:
-                return metadata[session_key]
-        except:
-            pass
-    
-    return []
-
-def save_uploaded_image_simple(uploaded_file, user_id, session_id, description=""):
-    """Simple image upload function"""
-    try:
-        # Generate unique filename
-        unique_id = str(uuid.uuid4())[:8]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        original_filename = uploaded_file.name
-        file_ext = original_filename.split('.')[-1].lower()
-        safe_filename = f"{timestamp}_{unique_id}.{file_ext}"
-        
-        # Get session folder
-        session_folder = get_session_image_folder(user_id, session_id)
-        
-        # Save the file
-        file_path = os.path.join(session_folder, safe_filename)
-        
-        # Read and save
-        image_bytes = uploaded_file.read()
-        with open(file_path, 'wb') as f:
-            f.write(image_bytes)
-        
-        # Create thumbnail if it's an image
-        try:
-            if file_ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
-                img = Image.open(io.BytesIO(image_bytes))
-                img.thumbnail((400, 400), Image.Resampling.LANCZOS)
-                thumb_path = os.path.join(session_folder, f"thumb_{safe_filename}")
-                img.save(thumb_path, quality=85)
-                thumbnail_path = thumb_path
-            else:
-                thumbnail_path = file_path
-        except:
-            thumbnail_path = file_path
-        
-        # Create image info
-        image_info = {
-            "id": unique_id,
-            "original_filename": original_filename,
-            "saved_filename": safe_filename,
-            "description": description,
-            "upload_date": datetime.now().isoformat(),
-            "session_id": session_id,
-            "file_size_kb": len(image_bytes) / 1024,
-            "paths": {
-                "original": file_path,
-                "thumbnail": thumbnail_path
-            }
-        }
-        
-        # Save metadata
-        save_image_metadata(user_id, session_id, image_info)
-        
-        return {
-            "success": True,
-            "image_info": image_info,
-            "message": f"Image '{original_filename}' uploaded successfully!"
-        }
-        
-    except Exception as e:
-        return {"success": False, "error": f"Error processing image: {str(e)}"}
-
-def delete_image_simple(user_id, session_id, image_id):
-    """Delete an image"""
-    try:
-        metadata_file = f"user_images/{user_id}/image_metadata.json"
-        
-        if os.path.exists(metadata_file):
-            with open(metadata_file, 'r') as f:
-                metadata = json.load(f)
-            
-            session_key = str(session_id)
-            if session_key in metadata:
-                for i, img in enumerate(metadata[session_key]):
-                    if img["id"] == image_id:
-                        # Delete files
-                        if os.path.exists(img["paths"]["original"]):
-                            os.remove(img["paths"]["original"])
-                        if os.path.exists(img["paths"]["thumbnail"]):
-                            os.remove(img["paths"]["thumbnail"])
-                        
-                        # Remove from metadata
-                        metadata[session_key].pop(i)
-                        
-                        # Save updated metadata
-                        with open(metadata_file, 'w') as f:
-                            json.dump(metadata, f, indent=2)
-                        
-                        return {"success": True, "message": "Image deleted successfully"}
-        
-        return {"success": False, "error": "Image not found"}
-    except Exception as e:
-        return {"success": False, "error": f"Error deleting image: {str(e)}"}
-
-def get_image_data_url(image_path):
-    """Convert image to data URL"""
-    try:
-        with open(image_path, "rb") as img_file:
-            encoded = base64.b64encode(img_file.read()).decode()
-            extension = image_path.split('.')[-1].lower()
-            mime_type = f"image/{'jpeg' if extension in ['jpg', 'jpeg'] else extension}"
-            return f"data:{mime_type};base64,{encoded}"
-    except:
-        return None
-
-def display_simple_gallery(user_id, session_id):
-    """Display simple image gallery"""
-    images = get_session_images(user_id, session_id)
-    
-    if not images:
-        return []
-    
-    st.subheader(f"📸 Your Photos ({len(images)})")
-    
-    selected_images = []
-    
-    for idx, img_info in enumerate(images):
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            # Display thumbnail if exists
-            if os.path.exists(img_info["paths"]["thumbnail"]):
-                data_url = get_image_data_url(img_info["paths"]["thumbnail"])
-                if data_url:
-                    st.markdown(f'<img src="{data_url}" style="width:100%; max-height:200px; object-fit:cover; border-radius:8px;">', unsafe_allow_html=True)
-            
-            st.caption(f"{img_info['original_filename']}")
-            if img_info.get('description'):
-                st.caption(f"📝 {img_info['description']}")
-        
-        with col2:
-            # Select button
-            if st.button("✨ Use", key=f"select_{img_info['id']}", help="Use this photo to create prompts"):
-                selected_images.append(img_info)
-            
-            # Delete button
-            if st.button("🗑️", key=f"delete_{img_info['id']}", help="Delete this photo"):
-                result = delete_image_simple(user_id, session_id, img_info["id"])
-                if result["success"]:
-                    st.success("Photo deleted")
-                    st.rerun()
-                else:
-                    st.error(result["error"])
-    
-    return selected_images
-
-def get_images_for_prompt_simple(user_id, session_id):
-    """Simple prompt generation from images"""
-    images = get_session_images(user_id, session_id)
-    
-    if not images:
-        return ""
-    
-    prompt_text = "\n\n📸 **PHOTOS UPLOADED FOR THIS MEMORY:**\n"
-    
-    for img in images[:5]:  # Limit to 5 images
-        prompt_text += f"- Photo: {img['original_filename']}"
-        if img.get('description'):
-            prompt_text += f" - {img['description']}"
-        prompt_text += "\n"
-    
-    prompt_text += """
-**Use these photos to ask specific questions about:
-1. Who is in the photo?
-2. Where was it taken?
-3. When was it taken?
-4. What's happening in the photo?
-5. What emotions does it bring up?
-6. What happened before/after this moment?**
-"""
-    
-    return prompt_text
-
-def get_total_user_images(user_id):
-    """Get total number of images"""
-    metadata_file = f"user_images/{user_id}/image_metadata.json"
-    
-    if os.path.exists(metadata_file):
-        try:
-            with open(metadata_file, 'r') as f:
-                metadata = json.load(f)
-            
-            total = 0
-            for session_id, images in metadata.items():
-                total += len(images)
-            return total
-        except:
-            pass
-    
-    return 0
-# ============================================================================
-# SECTION 4: CSS STYLING AND VISUAL DESIGN
+# SECTION 3: CSS STYLING AND VISUAL DESIGN
 # ============================================================================
 LOGO_URL = "https://menuhunterai.com/wp-content/uploads/2026/01/logo.png"
 
 st.markdown(f"""
 <style>
-    /* All existing CSS stays the same */
     .main-header {{
         text-align: center;
         padding-top: 0.5rem;
@@ -608,43 +358,11 @@ st.markdown(f"""
     .html-link-btn:hover {{
         opacity: 0.9;
     }}
-    
-    /* Image Gallery Styles - SIMPLIFIED */
-    .photo-prompt-card {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }}
-    
-    .photo-prompt-card:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }}
-    
-    .simple-image-btn {{
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        font-weight: bold;
-        cursor: pointer;
-        margin: 0.25rem;
-        width: 100%;
-    }}
-    
-    .simple-image-btn:hover {{
-        background: #45a049;
-    }}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 5: SESSIONS DATA STRUCTURE
+# SECTION 4: SESSIONS DATA STRUCTURE
 # ============================================================================
 SESSIONS = [
     {
@@ -695,7 +413,7 @@ SESSIONS = [
 ]
 
 # ============================================================================
-# SECTION 6: FALLBACK PROMPTS FOR "NO BLANK PAGES" FEATURE
+# SECTION 5: FALLBACK PROMPTS FOR "NO BLANK PAGES" FEATURE
 # ============================================================================
 FALLBACK_PROMPTS = [
     "Describe a smell or sound that brings back a strong memory.",
@@ -711,7 +429,7 @@ FALLBACK_PROMPTS = [
 ]
 
 # ============================================================================
-# SECTION 7: HISTORICAL EVENTS CSV SYSTEM (SIMPLIFIED)
+# SECTION 6: HISTORICAL EVENTS CSV SYSTEM
 # ============================================================================
 def create_default_events_csv():
     """Create a default historical events CSV file if it doesn't exist"""
@@ -744,6 +462,7 @@ def create_default_events_csv():
             f.write("year_range,event,category,region,description\n")
             for event in default_events:
                 f.write(",".join([f'"{item}"' for item in event]) + "\n")
+        print("Created default historical_events.csv file")
         return True
     except Exception as e:
         print(f"Error creating default CSV: {e}")
@@ -755,10 +474,13 @@ def load_historical_events():
         csv_file = "historical_events.csv"
         
         if not os.path.exists(csv_file):
+            # Create default CSV if it doesn't exist
             create_default_events_csv()
         
+        # Read CSV file
         df = pd.read_csv(csv_file)
         
+        # Group events by decade
         events_by_decade = {}
         for _, row in df.iterrows():
             decade = str(row['year_range']).strip()
@@ -778,6 +500,7 @@ def load_historical_events():
                 'year_range': decade
             })
         
+        print(f"Loaded {len(df)} historical events from CSV")
         return events_by_decade
         
     except Exception as e:
@@ -788,32 +511,64 @@ def get_events_for_birth_year(birth_year):
     """Get historical events relevant to a person based on their birth year"""
     try:
         events_by_decade = load_historical_events()
-        relevant_events = []
+        
+        # Calculate current year
         current_year = datetime.now().year
+        
+        # Create list of decades from birth year to current year
+        relevant_events = []
+        
+        # Calculate start decade (e.g., 1954 -> 1950s)
         start_decade_year = (birth_year // 10) * 10
         
+        # Loop through decades from birth decade to current decade
         for decade_year in range(start_decade_year, current_year + 10, 10):
             decade_key = f"{decade_year}s"
             
             if decade_key in events_by_decade:
                 for event in events_by_decade[decade_key]:
-                    event_year = int(decade_key.replace('s', '')) + 5
+                    # Calculate approximate age when event happened
+                    event_year = int(decade_key.replace('s', '')) + 5  # Mid-decade approximation
                     age_at_event = event_year - birth_year
                     
-                    if age_at_event >= 0:
+                    if age_at_event >= 0:  # Only events after birth
                         event_with_age = event.copy()
                         event_with_age['approx_age'] = age_at_event
                         relevant_events.append(event_with_age)
         
+        # Sort by decade
         relevant_events.sort(key=lambda x: x['year_range'])
-        return relevant_events[:20]
+        
+        return relevant_events[:20]  # Limit to 20 most relevant events
         
     except Exception as e:
         print(f"Error getting events for birth year {birth_year}: {e}")
         return []
 
+def format_historical_context(events, birth_year):
+    """Format historical events for the AI prompt"""
+    if not events:
+        return ""
+    
+    context_lines = []
+    for event in events:
+        event_text = f"- {event['event']} ({event['year_range']})"
+        if event.get('region') == 'UK':
+            event_text += " [UK]"
+        if 'approx_age' in event and event['approx_age'] >= 0:
+            event_text += f" (Age {event['approx_age']})"
+        context_lines.append(event_text)
+    
+    return f"""
+HISTORICAL CONTEXT (Born {birth_year}):
+During their lifetime, these major events occurred:
+{chr(10).join(context_lines[:10])}
+
+Consider how these historical moments might have shaped their experiences and perspectives.
+"""
+
 # ============================================================================
-# SECTION 8: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
+# SECTION 7: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
 # ============================================================================
 def generate_password(length=12):
     """Generate a secure random password"""
@@ -822,7 +577,7 @@ def generate_password(length=12):
     return password
 
 def hash_password(password):
-    """Hash password for storage"""
+    """Hash password for storage (simple implementation - use bcrypt in production)"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_password(stored_hash, password):
@@ -830,13 +585,16 @@ def verify_password(stored_hash, password):
     return stored_hash == hash_password(password)
 
 def create_user_account(user_data, password=None):
-    """Create a new user account"""
+    """Create a new user account and save to accounts database"""
     try:
+        # Generate a unique user ID
         user_id = hashlib.sha256(f"{user_data['email']}{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         
+        # Generate initial password if not provided
         if not password:
             password = generate_password()
         
+        # Create user record
         user_record = {
             "user_id": user_id,
             "email": user_data["email"].lower().strip(),
@@ -869,6 +627,7 @@ def create_user_account(user_data, password=None):
             }
         }
         
+        # Save to accounts database
         save_account_data(user_record)
         
         return {
@@ -891,7 +650,9 @@ def save_account_data(user_record):
         with open(filename, 'w') as f:
             json.dump(user_record, f, indent=2)
         
+        # Also update accounts index
         update_accounts_index(user_record)
+        
         return True
     except Exception as e:
         print(f"Error saving account data: {e}")
@@ -909,6 +670,7 @@ def update_accounts_index(user_record):
         else:
             index = {}
         
+        # Add or update user in index
         index[user_record['user_id']] = {
             "email": user_record['email'],
             "first_name": user_record['profile']['first_name'],
@@ -926,20 +688,23 @@ def update_accounts_index(user_record):
         return False
 
 def get_account_data(user_id=None, email=None):
-    """Get account data for a user"""
+    """Get account data for a user by ID or email"""
     try:
         if user_id:
+            # Direct lookup by user_id
             filename = f"accounts/{user_id}_account.json"
             if os.path.exists(filename):
                 with open(filename, 'r') as f:
                     return json.load(f)
         elif email:
+            # Search by email
             email = email.lower().strip()
             index_file = "accounts/accounts_index.json"
             if os.path.exists(index_file):
                 with open(index_file, 'r') as f:
                     index = json.load(f)
                 
+                # Find user by email
                 for uid, user_data in index.items():
                     if user_data.get("email", "").lower() == email:
                         filename = f"accounts/{uid}_account.json"
@@ -956,6 +721,7 @@ def authenticate_user(email, password):
         account_data = get_account_data(email=email)
         if account_data:
             if verify_password(account_data['password_hash'], password):
+                # Update last login
                 account_data['last_login'] = datetime.now().isoformat()
                 save_account_data(account_data)
                 return {
@@ -967,18 +733,33 @@ def authenticate_user(email, password):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+def update_account_settings(user_id, settings):
+    """Update user account settings"""
+    try:
+        account_data = get_account_data(user_id)
+        if account_data:
+            account_data['settings'].update(settings)
+            save_account_data(account_data)
+            return True
+    except Exception as e:
+        print(f"Error updating account settings: {e}")
+    return False
+
 def send_welcome_email(user_data, credentials):
     """Send welcome email with account details"""
     try:
+        # Check if email is configured
         if not EMAIL_CONFIG['sender_email'] or not EMAIL_CONFIG['sender_password']:
             print("Email not configured - skipping email send")
             return False
         
+        # Create email message
         msg = MIMEMultipart()
         msg['From'] = EMAIL_CONFIG['sender_email']
         msg['To'] = user_data['email']
         msg['Subject'] = "Welcome to MemLife - Your Account Details"
         
+        # Email body
         body = f"""
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -1021,6 +802,7 @@ def send_welcome_email(user_data, credentials):
         
         msg.attach(MIMEText(body, 'html'))
         
+        # Send email
         with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
             if EMAIL_CONFIG['use_tls']:
                 server.starttls()
@@ -1036,22 +818,25 @@ def send_welcome_email(user_data, credentials):
 
 def logout_user():
     """Log out the current user"""
+    # Clear all session state related to user
     keys_to_clear = [
         'user_id', 'user_account', 'logged_in', 'show_profile_setup',
         'current_session', 'current_question', 'responses', 
-        'session_conversations', 'data_loaded', 'show_image_upload',
-        'selected_images_for_prompt', 'image_prompt_mode'
+        'session_conversations', 'data_loaded'
     ]
     
     for key in keys_to_clear:
         if key in st.session_state:
             del st.session_state[key]
     
+    # Clear query params
     st.query_params.clear()
+    
+    # Rerun to show login page
     st.rerun()
 
 # ============================================================================
-# SECTION 9: JSON-BASED STORAGE FUNCTIONS
+# SECTION 8: JSON-BASED STORAGE FUNCTIONS
 # ============================================================================
 def get_user_filename(user_id):
     """Create a safe filename for user data"""
@@ -1066,6 +851,7 @@ def load_user_data(user_id):
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 data = json.load(f)
+                # Ensure we have the expected structure
                 if "responses" in data:
                     return data
         return {"responses": {}, "last_loaded": datetime.now().isoformat()}
@@ -1094,7 +880,7 @@ def save_user_data(user_id, responses_data):
         return False
 
 # ============================================================================
-# SECTION 10: NEW FUNCTIONS FOR ADDED FEATURES
+# SECTION 9: NEW FUNCTIONS FOR ADDED FEATURES
 # ============================================================================
 def update_streak():
     """Update user's writing streak"""
@@ -1114,8 +900,10 @@ def update_streak():
             days_diff = (today_date - last_date).days
             
             if days_diff == 1:
+                # Consecutive day
                 st.session_state.streak_days += 1
             elif days_diff > 1:
+                # Broken streak
                 st.session_state.streak_days = 1
             
             st.session_state.total_writing_days += 1
@@ -1160,7 +948,7 @@ def save_jot(text, estimated_year=None):
     return True
 
 # ============================================================================
-# SECTION 11: AUTHENTICATION COMPONENTS
+# SECTION 10: AUTHENTICATION COMPONENTS
 # ============================================================================
 def show_login_signup():
     """Show login/signup interface"""
@@ -1171,9 +959,11 @@ def show_login_signup():
     </div>
     """, unsafe_allow_html=True)
     
+    # Initialize active tab in session state
     if 'auth_tab' not in st.session_state:
         st.session_state.auth_tab = 'login'
     
+    # Tabs for Login/Signup
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🔐 Login", use_container_width=True, 
@@ -1188,6 +978,7 @@ def show_login_signup():
     
     st.divider()
     
+    # Show appropriate form based on active tab
     if st.session_state.auth_tab == 'login':
         show_login_form()
     else:
@@ -1221,6 +1012,7 @@ def show_login_form():
                         st.session_state.logged_in = True
                         st.session_state.data_loaded = False
                         
+                        # Set remember me
                         if remember_me:
                             st.query_params['user'] = result['user_id']
                         
@@ -1248,11 +1040,13 @@ def show_signup_form():
         with col2:
             confirm_password = st.text_input("Confirm Password*", type="password", key="signup_confirm_password")
         
+        # Terms and conditions
         accept_terms = st.checkbox("I agree to the Terms of Service and Privacy Policy*", key="signup_terms")
         
         signup_button = st.form_submit_button("Create My Account", type="primary", use_container_width=True)
         
         if signup_button:
+            # Validate form
             errors = []
             
             if not first_name:
@@ -1268,6 +1062,7 @@ def show_signup_form():
             if not accept_terms:
                 errors.append("You must accept the terms and conditions")
             
+            # Check if email already exists
             if email and "@" in email:
                 existing_account = get_account_data(email=email)
                 if existing_account:
@@ -1277,28 +1072,32 @@ def show_signup_form():
                 for error in errors:
                     st.error(error)
             else:
+                # Create basic user data (profile will be completed later)
                 user_data = {
                     "first_name": first_name,
                     "last_name": last_name,
                     "email": email,
-                    "account_for": "self"
+                    "account_for": "self"  # Default value
                 }
                 
                 with st.spinner("Creating your account..."):
                     result = create_user_account(user_data, password)
                     
                     if result["success"]:
+                        # Send welcome email
                         email_sent = send_welcome_email(user_data, {
                             "user_id": result["user_id"],
                             "password": password
                         })
                         
+                        # Set user session
                         st.session_state.user_id = result["user_id"]
                         st.session_state.user_account = result["user_record"]
                         st.session_state.logged_in = True
                         st.session_state.data_loaded = False
-                        st.session_state.show_profile_setup = True
+                        st.session_state.show_profile_setup = True  # Show profile setup modal
                         
+                        # Show success message
                         st.success("✅ Account created successfully!")
                         
                         if email_sent:
@@ -1315,7 +1114,9 @@ def show_profile_setup_modal():
     st.title("👤 Complete Your Profile")
     st.write("Please complete your profile to start building your timeline:")
     
+    # Use a form for profile setup
     with st.form("profile_setup_form"):
+        # Gender selection using radio buttons
         st.write("**Gender**")
         gender = st.radio(
             "Gender",
@@ -1325,6 +1126,7 @@ def show_profile_setup_modal():
             label_visibility="collapsed"
         )
         
+        # Birthdate
         st.write("**Birthdate**")
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -1339,6 +1141,7 @@ def show_profile_setup_modal():
             years = list(range(current_year, current_year - 120, -1))
             birth_year = st.selectbox("Year", years, key="modal_year", label_visibility="collapsed")
         
+        # Account type using radio buttons
         st.write("**Is this account for you or someone else?**")
         account_for = st.radio(
             "Account Type",
@@ -1356,11 +1159,13 @@ def show_profile_setup_modal():
         
         if submit_button or skip_button:
             if submit_button:
+                # Validate birthdate
                 if not birth_month or not birth_day or not birth_year:
                     st.error("Please complete your birthdate or click 'Skip for Now'")
                     st.markdown('</div>', unsafe_allow_html=True)
                     return
                 
+                # Update user account with profile data
                 birthdate = f"{birth_month} {birth_day}, {birth_year}"
                 account_for_value = "self" if account_for == "For me" else "other"
                 
@@ -1370,9 +1175,11 @@ def show_profile_setup_modal():
                     st.session_state.user_account['profile']['timeline_start'] = birthdate
                     st.session_state.user_account['account_type'] = account_for_value
                     
+                    # Save updated account
                     save_account_data(st.session_state.user_account)
                     st.success("Profile updated successfully!")
             
+            # Close modal
             st.session_state.show_profile_setup = False
             st.markdown('</div>', unsafe_allow_html=True)
             st.rerun()
@@ -1380,7 +1187,7 @@ def show_profile_setup_modal():
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 12: SESSION STATE INITIALIZATION
+# SECTION 11: SESSION STATE INITIALIZATION
 # ============================================================================
 
 # Set page config first
@@ -1435,16 +1242,6 @@ if "show_jots" not in st.session_state:
 if "historical_events_loaded" not in st.session_state:
     st.session_state.historical_events_loaded = False
 
-# NEW: Initialize image-related state variables
-if "show_image_upload" not in st.session_state:
-    st.session_state.show_image_upload = False
-if "image_prompt_mode" not in st.session_state:
-    st.session_state.image_prompt_mode = False
-if "selected_images_for_prompt" not in st.session_state:
-    st.session_state.selected_images_for_prompt = []
-if "image_description" not in st.session_state:
-    st.session_state.image_description = ""
-
 # Initialize streak system
 if "streak_days" not in st.session_state:
     st.session_state.streak_days = 1
@@ -1480,6 +1277,7 @@ if not st.session_state.responses:
 if st.session_state.logged_in and st.session_state.user_id and not st.session_state.data_loaded:
     print(f"DEBUG: Loading data for user {st.session_state.user_id}")
     
+    # Load biography data
     user_data = load_user_data(st.session_state.user_id)
     
     if "responses" in user_data:
@@ -1487,6 +1285,7 @@ if st.session_state.logged_in and st.session_state.user_id and not st.session_st
             try:
                 session_id = int(session_id_str)
                 if session_id in st.session_state.responses:
+                    # Only load if we have questions
                     if "questions" in session_data:
                         st.session_state.responses[session_id]["questions"] = session_data["questions"]
             except ValueError:
@@ -1496,20 +1295,23 @@ if st.session_state.logged_in and st.session_state.user_id and not st.session_st
     print(f"DEBUG: Data loaded for {st.session_state.user_id}")
 
 # ============================================================================
-# SECTION 13: CORE APPLICATION FUNCTIONS
+# SECTION 12: CORE APPLICATION FUNCTIONS
 # ============================================================================
 def save_response(session_id, question, answer):
     """Save response to both session state AND JSON file"""
     user_id = st.session_state.user_id
     
+    # CRITICAL: Don't save if no user
     if not user_id or user_id == "":
         print("DEBUG: No user_id, cannot save")
         return False
     
     print(f"DEBUG: Saving for user {user_id}, session {session_id}, question: {question[:50]}...")
     
+    # Update streak when user saves
     update_streak()
     
+    # Update account stats
     if st.session_state.user_account:
         word_count = len(re.findall(r'\w+', answer))
         if "stats" not in st.session_state.user_account:
@@ -1520,6 +1322,7 @@ def save_response(session_id, question, answer):
         st.session_state.user_account["stats"]["last_active"] = datetime.now().isoformat()
         save_account_data(st.session_state.user_account)
     
+    # 1. Save to session state
     if session_id not in st.session_state.responses:
         st.session_state.responses[session_id] = {
             "title": SESSIONS[session_id-1]["title"],
@@ -1534,6 +1337,7 @@ def save_response(session_id, question, answer):
         "timestamp": datetime.now().isoformat()
     }
     
+    # 2. Save to JSON file
     if save_user_data(user_id, st.session_state.responses):
         print(f"DEBUG: Successfully saved to JSON file for {user_id}")
         return True
@@ -1586,7 +1390,7 @@ def get_progress_info(session_id):
     }
 
 # ============================================================================
-# SECTION 14: AUTO-CORRECT FUNCTION
+# SECTION 13: AUTO-CORRECT FUNCTION
 # ============================================================================
 def auto_correct_text(text):
     """Auto-correct text using OpenAI"""
@@ -1608,7 +1412,7 @@ def auto_correct_text(text):
         return text
 
 # ============================================================================
-# SECTION 15: GHOSTWRITER PROMPT FUNCTION WITH SIMPLE IMAGE PROMPTS
+# SECTION 14: GHOSTWRITER PROMPT FUNCTION (ENHANCED WITH HISTORICAL EVENTS)
 # ============================================================================
 def get_system_prompt():
     current_session = SESSIONS[st.session_state.current_session]
@@ -1626,117 +1430,57 @@ def get_system_prompt():
             birthdate = st.session_state.user_account['profile']['birthdate']
             birth_year = int(birthdate.split(', ')[-1])
             
+            # Get relevant historical events
             events = get_events_for_birth_year(birth_year)
             
             if events:
-                context_lines = []
-                for event in events[:5]:
-                    event_text = f"- {event['event']} ({event['year_range']})"
-                    if event.get('region') == 'UK':
-                        event_text += " [UK]"
-                    if 'approx_age' in event and event['approx_age'] >= 0:
-                        event_text += f" (Age {event['approx_age']})"
-                    context_lines.append(event_text)
-                
-                historical_context = f"""
-HISTORICAL CONTEXT (Born {birth_year}):
-During their lifetime, these major events occurred:
-{chr(10).join(context_lines)}
-
-Consider how these historical moments might have shaped their experiences and perspectives.
-"""
+                # Format historical context for the prompt
+                historical_context = format_historical_context(events, birth_year)
         except Exception as e:
             print(f"Error generating historical context: {e}")
-    
-    # Get image context if user has uploaded images
-    image_context = ""
-    if st.session_state.logged_in and st.session_state.user_id:
-        current_session_id = current_session["id"]
-        images = get_session_images(st.session_state.user_id, current_session_id)
-        
-        if images:
-            image_context = get_images_for_prompt_simple(st.session_state.user_id, current_session_id)
-    
-    # If in image prompt mode, create specific photo prompts
-    image_prompt_section = ""
-    if st.session_state.image_prompt_mode and st.session_state.selected_images_for_prompt:
-        image_prompt_section = "\n\n📸 **PHOTO STORY MODE:**\n"
-        image_prompt_section += "The user has selected specific photos to write about. "
-        image_prompt_section += "Ask questions about these specific photos:\n\n"
-        
-        for idx, img in enumerate(st.session_state.selected_images_for_prompt[:3]):
-            image_prompt_section += f"**Photo {idx+1}: {img['original_filename']}**\n"
-            if img.get('description'):
-                image_prompt_section += f"Description: {img['description']}\n"
-            
-            # Add specific prompt questions for each photo
-            photo_prompts = [
-                "Who is in this photo?",
-                "Where and when was this taken?",
-                "What was happening just before/after this moment?",
-                "What emotions does this photo bring up?",
-                "Why was this photo taken/saved?"
-            ]
-            
-            # Pick 2-3 random prompt questions for each photo
-            import random
-            selected_prompts = random.sample(photo_prompts, min(3, len(photo_prompts)))
-            for prompt in selected_prompts:
-                image_prompt_section += f"• {prompt}\n"
-            
-            image_prompt_section += "\n"
     
     if st.session_state.ghostwriter_mode:
         return f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
-{historical_context}{image_context}{image_prompt_section}
+{historical_context}
 
 YOUR APPROACH:
 1. Listen like an archivist
 2. Think in scenes, sensory details, and emotional truth
 3. Connect personal stories to historical context when relevant
 4. Find the story that needs to be told
-5. When photos are mentioned, ask SPECIFIC questions about them
-
-PHOTO QUESTIONS TO ASK:
-• "Who are the people in this photo?"
-• "What was happening that day?"
-• "Where was this taken and why were you there?"
-• "What do you remember feeling when this was taken?"
-• "What happened right after this photo was taken?"
+5. Respect silence and complexity
 
 Tone: Literary but not pretentious. Serious but not solemn.
 
-IMPORTANT: When photos are mentioned, ask specific, detailed questions about them."""
+IMPORTANT: When appropriate, reference historical context to prompt deeper reflection."""
     else:
         return f"""You are a warm, professional biographer helping document a life story.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
-{historical_context}{image_context}{image_prompt_section}
+{historical_context}
 
 Please:
 1. Listen actively
 2. Acknowledge warmly
-3. Ask ONE natural follow-up question that connects to historical context or photos
-4. When photos are mentioned, ask about the people, place, and emotions
+3. Ask ONE natural follow-up question that might connect to historical context
+4. Keep conversation flowing
 
-PHOTO QUESTIONS:
-• "Tell me about the people in this photo"
-• "What's the story behind this moment?"
-• "How do you feel when you look at this photo?"
+Tone: Kind, curious, professional
 
-Tone: Kind, curious, professional"""
+Note: Reference historical events when relevant to prompt richer stories."""
 
 # ============================================================================
-# SECTION 16: MAIN APP FLOW CONTROL
+# SECTION 15: MAIN APP FLOW CONTROL
 # ============================================================================
 
 # Show profile setup modal if needed
 if st.session_state.get('show_profile_setup', False):
     show_profile_setup_modal()
+    # Don't show main app if profile setup is active
     st.stop()
 
 # Show login/signup if not logged in
@@ -1755,7 +1499,7 @@ if not st.session_state.historical_events_loaded:
         print(f"Error loading historical events: {e}")
 
 # ============================================================================
-# SECTION 17: MAIN APP HEADER
+# SECTION 16: MAIN APP HEADER
 # ============================================================================
 st.markdown(f"""
 <div class="main-header">
@@ -1766,7 +1510,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 18: SIDEBAR - USER PROFILE AND SETTINGS
+# SECTION 17: SIDEBAR - USER PROFILE AND SETTINGS
 # ============================================================================
 with st.sidebar:
     # User Profile Header with Account Info
@@ -1826,22 +1570,6 @@ with st.sidebar:
     if st.session_state.streak_days >= 30:
         st.success("🌟 Monthly Master!")
     
-    # Image Stats
-    st.divider()
-    st.subheader("🖼️ Photo Gallery")
-    
-    if st.session_state.logged_in:
-        total_images = get_total_user_images(st.session_state.user_id)
-        st.metric("Total Photos", total_images)
-        
-        # Quick image navigation
-        if total_images > 0:
-            if st.button("📸 View Photos", use_container_width=True):
-                st.session_state.show_image_upload = True
-                st.rerun()
-        else:
-            st.info("No photos yet")
-    
     # Timeline Progress (if we have birthdate)
     if st.session_state.user_account and st.session_state.user_account['profile'].get('birthdate'):
         try:
@@ -1850,14 +1578,21 @@ with st.sidebar:
             age = current_year - birth_year
             
             if age > 0:
-                total_possible_entries = age * 12
+                # Calculate timeline coverage (simplified)
+                total_possible_entries = age * 12  # Rough estimate: 12 entries per year
                 actual_entries = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
-                coverage = min(100, (actual_entries / total_possible_entries) * 500)
+                coverage = min(100, (actual_entries / total_possible_entries) * 500)  # Scale for visibility
                 
                 st.divider()
                 st.subheader("📅 Timeline Coverage")
                 st.progress(coverage / 100)
                 st.caption(f"{actual_entries} memories across {age} years")
+                
+                # Show historical timeline note
+                if actual_entries > 0:
+                    events = get_events_for_birth_year(birth_year)
+                    if events and len(events) > 0:
+                        st.caption(f"📜 {len(events)} historical events in your timeline")
         except:
             pass
     
@@ -1877,6 +1612,7 @@ with st.sidebar:
     st.subheader("⚡ Quick Capture")
     
     with st.expander("💭 **Jot Now - Quick Memory**", expanded=False):
+        # Use a text area with a unique key
         quick_note = st.text_area(
             "Got a memory? Jot it down:",
             value="",
@@ -1894,6 +1630,7 @@ with st.sidebar:
                     save_jot(quick_note, estimated_year)
                     
                     st.success("Saved! ✨")
+                    # The text area will clear on rerun
                     st.rerun()
                 else:
                     st.warning("Please write something first!")
@@ -1901,6 +1638,7 @@ with st.sidebar:
         with col2:
             use_disabled = not quick_note or not quick_note.strip()
             if st.button("📝 Use as Prompt", key="use_jot_btn", use_container_width=True, disabled=use_disabled):
+                # Use this text as a new prompt
                 st.session_state.current_question_override = quick_note
                 st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
                 st.info("Ready to write about this!")
@@ -1922,7 +1660,7 @@ with st.sidebar:
     ghostwriter_mode = st.toggle(
         "Professional Ghostwriter Mode", 
         value=st.session_state.ghostwriter_mode,
-        help="When enabled, the AI acts as a professional biographer using advanced interviewing techniques with historical context and photo integration.",
+        help="When enabled, the AI acts as a professional biographer using advanced interviewing techniques with historical context.",
         key="ghostwriter_toggle"
     )
     
@@ -1943,7 +1681,7 @@ with st.sidebar:
     
     if st.session_state.ghostwriter_mode:
         st.success("✓ Professional mode active")
-        st.caption("With historical context & photo integration")
+        st.caption("With historical context integration")
     else:
         st.info("Standard mode active")
     
@@ -2015,7 +1753,6 @@ with st.sidebar:
             st.session_state.current_question = 0
             st.session_state.editing = None
             st.session_state.current_question_override = None
-            st.session_state.image_prompt_mode = False
             st.rerun()
     
     # ============================================================================
@@ -2033,7 +1770,6 @@ with st.sidebar:
             st.session_state.current_question = max(0, st.session_state.current_question - 1)
             st.session_state.editing = None
             st.session_state.current_question_override = None
-            st.session_state.image_prompt_mode = False
             st.rerun()
     
     with col2:
@@ -2041,7 +1777,6 @@ with st.sidebar:
             st.session_state.current_question = min(len(current_session["questions"]) - 1, st.session_state.current_question + 1)
             st.session_state.editing = None
             st.session_state.current_question_override = None
-            st.session_state.image_prompt_mode = False
             st.rerun()
     
     st.divider()
@@ -2053,7 +1788,6 @@ with st.sidebar:
             st.session_state.current_question = 0
             st.session_state.editing = None
             st.session_state.current_question_override = None
-            st.session_state.image_prompt_mode = False
             st.rerun()
     with col2:
         if st.button("Next Session →", disabled=st.session_state.current_session >= len(SESSIONS)-1, key="next_session_sidebar"):
@@ -2061,7 +1795,6 @@ with st.sidebar:
             st.session_state.current_question = 0
             st.session_state.editing = None
             st.session_state.current_question_override = None
-            st.session_state.image_prompt_mode = False
             st.rerun()
     
     session_options = [f"Session {s['id']}: {s['title']}" for s in SESSIONS]
@@ -2071,192 +1804,65 @@ with st.sidebar:
         st.session_state.current_question = 0
         st.session_state.editing = None
         st.session_state.current_question_override = None
-        st.session_state.image_prompt_mode = False
         st.rerun()
     
     st.divider()
     
     # ============================================================================
-    # BACKUP & EXPORT - WORKING VERSION WITH PROPER IMAGE HANDLING
+    # EXPORT OPTIONS (FIXED - No st.link_button, using HTML button instead)
     # ============================================================================
-    st.subheader("💾 Backup Everything")
+    st.subheader("📤 Export Options")
     
     total_answers = sum(len(session.get("questions", {})) for session in st.session_state.responses.values())
-    total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
+    st.caption(f"Total answers: {total_answers}")
     
-    st.caption(f"📝 {total_answers} stories • 📸 {total_images} photos")
+    # Prepare data for export
+    export_data = {}
+    for session in SESSIONS:
+        session_id = session["id"]
+        session_data = st.session_state.responses.get(session_id, {})
+        if session_data.get("questions"):
+            export_data[str(session_id)] = {
+                "title": session["title"],
+                "questions": session_data["questions"]
+            }
     
-    if st.session_state.logged_in and st.session_state.user_id:
-        # Prepare stories data
-        export_data = {}
-        for session in SESSIONS:
-            session_id = session["id"]
-            session_data = st.session_state.responses.get(session_id, {})
-            if session_data.get("questions"):
-                export_data[str(session_id)] = {
-                    "title": session["title"],
-                    "questions": session_data["questions"]
-                }
+    # Create JSON data
+    if export_data:
+        json_data = json.dumps({
+            "user": st.session_state.user_id,
+            "stories": export_data,
+            "export_date": datetime.now().isoformat()
+        }, indent=2)
         
-        # Get image metadata for display
-        total_images_export = total_images
+        # Encode the data for URL
+        encoded_data = base64.b64encode(json_data.encode()).decode()
         
-        if export_data:
-            # Create TWO versions of the data:
-            
-            # 1. FOR URL TO PUBLISHER (NO IMAGES - KEEP IT SMALL)
-            publisher_data_simple = {
-                "user": st.session_state.user_id,
-                "user_profile": {
-                    "first_name": st.session_state.user_account['profile']['first_name'],
-                    "last_name": st.session_state.user_account['profile']['last_name'],
-                    "email": st.session_state.user_account['profile']['email'],
-                    "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
-                } if st.session_state.user_account else {},
-                "stories": export_data,
-                "export_date": datetime.now().isoformat(),
-                "summary": {
-                    "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                    "total_images": total_images_export,
-                    "total_sessions": len(export_data)
-                },
-                "export_type": "publisher_ready_no_images",
-                "publisher_note": "Images not included in URL - use download for complete backup"
-            }
-            
-            publisher_json_simple = json.dumps(publisher_data_simple, indent=2)
-            
-            # 2. FOR COMPLETE DOWNLOAD (WITH IMAGES)
-            # First, create a function to get images with base64 for download
-            def get_all_images_with_base64_for_download(user_id):
-                all_images = {}
-                metadata_file = f"user_images/{user_id}/image_metadata.json"
-                
-                if os.path.exists(metadata_file):
-                    try:
-                        with open(metadata_file, 'r') as f:
-                            metadata = json.load(f)
-                        
-                        for session_id_str, images in metadata.items():
-                            session_id = int(session_id_str)
-                            if session_id not in all_images:
-                                all_images[session_id] = []
-                            
-                            for img_info in images:
-                                if os.path.exists(img_info["paths"]["original"]):
-                                    try:
-                                        with open(img_info["paths"]["original"], "rb") as img_file:
-                                            base64_data = base64.b64encode(img_file.read()).decode('utf-8')
-                                        
-                                        all_images[session_id].append({
-                                            "original_filename": img_info["original_filename"],
-                                            "description": img_info.get("description", ""),
-                                            "upload_date": img_info["upload_date"],
-                                            "base64_data": base64_data,
-                                            "mime_type": f"image/{img_info['saved_filename'].split('.')[-1].lower() if '.' in img_info['saved_filename'] else 'jpeg'}"
-                                        })
-                                    except Exception as e:
-                                        print(f"Error encoding image {img_info['original_filename']}: {e}")
-                    
-                    except Exception as e:
-                        print(f"Error loading image metadata: {e}")
-                
-                return all_images
-            
-            # Get images with base64 for download
-            all_images_with_base64 = get_all_images_with_base64_for_download(st.session_state.user_id)
-            total_images_with_data = sum(len(images) for images in all_images_with_base64.values())
-            
-            complete_data = {
-                "user": st.session_state.user_id,
-                "user_profile": {
-                    "first_name": st.session_state.user_account['profile']['first_name'],
-                    "last_name": st.session_state.user_account['profile']['last_name'],
-                    "email": st.session_state.user_account['profile']['email'],
-                    "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
-                } if st.session_state.user_account else {},
-                "stories": export_data,
-                "images": all_images_with_base64,
-                "export_date": datetime.now().isoformat(),
-                "summary": {
-                    "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                    "total_images": total_images_with_data,
-                    "total_sessions": len(export_data)
-                },
-                "export_type": "complete_with_images_base64"
-            }
-            
-            complete_json = json.dumps(complete_data, indent=2)
-            
-            # Create backup button for complete data
-            st.write("**Download complete backup to your device:**")
-            
-            # Main backup button (with images)
-            st.download_button(
-                label="💾 Download Complete Backup (Stories + Photos)",
-                data=complete_json,
-                file_name=f"MemLife_Complete_Backup_{st.session_state.user_id}_{datetime.now().strftime('%Y%m%d')}.json",
-                mime="application/json",
-                use_container_width=True,
-                key="download_complete_backup_btn",
-                help="Download everything: stories + base64 encoded photos"
-            )
-            
-            # Show what's included
-            with st.expander("📋 What's included in complete backup?", expanded=False):
-                if export_data:
-                    st.success("✅ **Stories Included:**")
-                    for session_id, session_data in export_data.items():
-                        story_count = len(session_data['questions'])
-                        st.caption(f"• Session {session_id}: {session_data['title']} - {story_count} stories")
-                
-                if all_images_with_base64:
-                    st.success("✅ **Photos Included (Base64 Encoded):**")
-                    for session_id, images in all_images_with_base64.items():
-                        image_count = len(images)
-                        session_title = next((s["title"] for s in SESSIONS if str(s["id"]) == str(session_id)), f"Session {session_id}")
-                        st.caption(f"• {session_title} - {image_count} photos")
-                    
-                    st.info(f"📸 Total: {total_images_with_data} photos included as base64 data")
-                
-                st.info("💡 All photos are base64 encoded and embedded in the JSON file for complete backup.")
-            
-            # PUBLISH SECTION - WORKING VERSION
-            st.divider()
-            st.subheader("🖨️ Create Your Book")
-            
-            if total_images_export > 0:
-                st.success(f"📚 **Create a beautiful book with:**")
-                st.write(f"• {sum(len(session['questions']) for session in export_data.values())} stories")
-                st.write(f"• {total_images_export} photo references")
-                st.write("• Professional layout and design")
-            else:
-                st.info(f"📚 Create a beautiful book with {sum(len(session['questions']) for session in export_data.values())} stories")
-            
-            # Encode SIMPLE data for publisher URL (NO images)
-            encoded_data = base64.b64encode(publisher_json_simple.encode()).decode()
-            publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
-            publisher_url = f"{publisher_base_url}?data={encoded_data}"
-            
-            # Use HTML button for publishing
-            st.markdown(f'''
-            <a href="{publisher_url}" target="_blank">
-                <button class="html-link-btn" style="margin-top: 0.5rem;">
-                    🖨️ Create Biography
-                </button>
-            </a>
-            ''', unsafe_allow_html=True)
-            
-            if total_images_export > 0:
-                st.info(f"📸 Note: {total_images_export} photo references included (images will need to be re-uploaded in publisher)")
-            else:
-                st.info("📸 Add photos to include them in your book!")
-            
-        else:
-            st.warning("No data to backup yet! Start by answering some questions or uploading photos.")
+        # Create URL with the data
+        publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+        publisher_url = f"{publisher_base_url}?data={encoded_data}"
         
+        # Download button
+        st.download_button(
+            label="📥 Download as JSON",
+            data=json_data,
+            file_name=f"LifeStory_{st.session_state.user_id}.json",
+            mime="application/json",
+            use_container_width=True,
+            key="download_json_btn"
+        )
+        
+        # Use HTML button instead of st.link_button to avoid errors
+        st.markdown(f'''
+        <a href="{publisher_url}" target="_blank">
+            <button class="html-link-btn">
+                🖨️ Publish Biography
+            </button>
+        </a>
+        ''', unsafe_allow_html=True)
+        st.caption("Format your biography professionally")
     else:
-        st.warning("Please log in to backup your data.")
+        st.warning("No responses to export yet!")
     
     st.divider()
     
@@ -2274,7 +1880,9 @@ with st.sidebar:
             if st.button("✅ Confirm Delete Session", type="primary", use_container_width=True, key="confirm_delete_session"):
                 current_session_id = SESSIONS[st.session_state.current_session]["id"]
                 try:
+                    # Clear from session state
                     st.session_state.responses[current_session_id]["questions"] = {}
+                    # Update the JSON file
                     save_user_data(st.session_state.user_id, st.session_state.responses)
                     st.session_state.confirming_clear = None
                     st.rerun()
@@ -2294,9 +1902,11 @@ with st.sidebar:
         with col1:
             if st.button("✅ Confirm Delete All", type="primary", use_container_width=True, key="confirm_delete_all"):
                 try:
+                    # Clear from session state
                     for session in SESSIONS:
                         session_id = session["id"]
                         st.session_state.responses[session_id]["questions"] = {}
+                    # Update the JSON file
                     save_user_data(st.session_state.user_id, st.session_state.responses)
                     st.session_state.confirming_clear = None
                     st.rerun()
@@ -2321,7 +1931,7 @@ with st.sidebar:
                 st.rerun()
 
 # ============================================================================
-# SECTION 19: HISTORICAL EVENTS VIEWER (IF REQUESTED)
+# SECTION 18: HISTORICAL EVENTS VIEWER (IF REQUESTED)
 # ============================================================================
 if st.session_state.get('show_event_manager', False):
     st.markdown("---")
@@ -2380,7 +1990,7 @@ if st.session_state.get('show_event_manager', False):
     st.markdown("---")
 
 # ============================================================================
-# SECTION 20: QUICK NOTES VIEWER (IF REQUESTED)
+# SECTION 19: QUICK NOTES VIEWER (IF REQUESTED)
 # ============================================================================
 if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
@@ -2407,7 +2017,7 @@ if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
 
 # ============================================================================
-# SECTION 21: MAIN CONTENT - SESSION HEADER
+# SECTION 20: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
 # ============================================================================
 current_session = SESSIONS[st.session_state.current_session]
 current_session_id = current_session["id"]
@@ -2420,12 +2030,6 @@ else:
     current_question_text = current_session["questions"][st.session_state.current_question]
     question_source = "regular"
 
-# ============================================================================
-# SECTION 22: SIMPLE IMAGE UPLOAD AND GALLERY
-# ============================================================================
-st.markdown("---")
-
-# Create columns for the header with image controls
 col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
     st.subheader(f"Session {current_session_id}: {current_session['title']}")
@@ -2435,14 +2039,8 @@ with col1:
     total_questions = len(current_session["questions"])
     st.caption(f"📝 {session_responses}/{total_questions} topics answered")
     
-    # Show image count for this session
-    if st.session_state.logged_in:
-        session_images = get_session_images(st.session_state.user_id, current_session_id)
-        if session_images:
-            st.caption(f"📸 {len(session_images)} photos in this session")
-    
     if st.session_state.ghostwriter_mode:
-        st.markdown('<p class="ghostwriter-tag">Professional Ghostwriter Mode (with historical context & photo integration)</p>', unsafe_allow_html=True)
+        st.markdown('<p class="ghostwriter-tag">Professional Ghostwriter Mode (with historical context)</p>', unsafe_allow_html=True)
         
 with col2:
     if question_source == "custom":
@@ -2457,13 +2055,13 @@ with col3:
             st.session_state.current_question = max(0, st.session_state.current_question - 1)
             st.session_state.editing = None
             st.session_state.current_question_override = None
-            st.session_state.image_prompt_mode = False
             st.rerun()
     with nav_col2:
+        # NEW: REFRESH PROMPT BUTTON
         if st.button("🔄 New Prompt", key="refresh_prompt_btn", use_container_width=True):
+            # Rotate through fallback prompts
             st.session_state.prompt_index = (st.session_state.prompt_index + 1) % len(FALLBACK_PROMPTS)
             st.session_state.current_question_override = FALLBACK_PROMPTS[st.session_state.prompt_index]
-            st.session_state.image_prompt_mode = False
             st.rerun()
 
 # Show current topic
@@ -2472,109 +2070,6 @@ st.markdown(f"""
     {current_question_text}
 </div>
 """, unsafe_allow_html=True)
-
-# ============================================================================
-# SIMPLE IMAGE CONTROLS
-# ============================================================================
-st.write("")  # Add some space
-
-# Create a container for image controls
-image_controls_container = st.container()
-
-with image_controls_container:
-    # Check if we have images for this session
-    has_images = False
-    if st.session_state.logged_in:
-        session_images = get_session_images(st.session_state.user_id, current_session_id)
-        has_images = len(session_images) > 0
-    
-    # Create columns for image controls
-    img_col1, img_col2 = st.columns(2)
-    
-    with img_col1:
-        # Toggle image upload panel
-        button_text = "📷 Add Photos" if not st.session_state.show_image_upload else "📷 Hide Photos"
-        if st.button(button_text, key="toggle_image_upload", use_container_width=True):
-            st.session_state.show_image_upload = not st.session_state.show_image_upload
-            st.rerun()
-    
-    with img_col2:
-        # Photo prompt button
-        if has_images:
-            if st.button("✨ Tell Photo Stories", key="photo_stories_btn", use_container_width=True, type="primary"):
-                st.session_state.image_prompt_mode = True
-                st.rerun()
-        else:
-            st.button("✨ Tell Photo Stories", key="disabled_photo_stories", use_container_width=True, disabled=True)
-
-# Show image upload/gallery interface if toggled on
-if st.session_state.show_image_upload and st.session_state.logged_in:
-    st.markdown("---")
-    
-    # Simple upload interface
-    st.subheader("📤 Upload Photos for This Memory")
-    
-    # File uploader
-    uploaded_files = st.file_uploader(
-        "Choose photos to upload",
-        type=['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'],
-        accept_multiple_files=True,
-        key=f"simple_uploader_{current_session_id}"
-    )
-    
-    if uploaded_files:
-        # Description input
-        description = st.text_input(
-            "Add a description for these photos (optional):",
-            placeholder="E.g., 'Family vacation, 1985'",
-            key=f"simple_desc_{current_session_id}"
-        )
-        
-        # Upload button
-        if st.button("Upload Photos", key=f"simple_upload_btn_{current_session_id}", type="primary"):
-            success_count = 0
-            error_count = 0
-            
-            for uploaded_file in uploaded_files:
-                result = save_uploaded_image_simple(uploaded_file, st.session_state.user_id, current_session_id, description)
-                if result["success"]:
-                    success_count += 1
-                else:
-                    error_count += 1
-                    st.error(f"Error uploading {uploaded_file.name}: {result['error']}")
-            
-            if success_count > 0:
-                st.success(f"Successfully uploaded {success_count} photo(s)!")
-                st.rerun()
-            
-            if error_count > 0:
-                st.warning(f"Failed to upload {error_count} photo(s).")
-    
-    # Show gallery if there are images
-    session_images = get_session_images(st.session_state.user_id, current_session_id)
-    if session_images:
-        st.divider()
-        st.subheader("📷 Your Photos")
-        
-        # Display simple gallery
-        selected_images = display_simple_gallery(st.session_state.user_id, current_session_id)
-        
-        if selected_images:
-            st.session_state.selected_images_for_prompt = selected_images
-            st.success(f"✅ Selected {len(selected_images)} photo(s)! Click 'Tell Photo Stories' to write about them.")
-    else:
-        st.info("No photos uploaded for this session yet.")
-    
-    st.markdown("---")
-
-# Show image prompt mode indicator
-if st.session_state.image_prompt_mode:
-    if st.session_state.selected_images_for_prompt:
-        selected_count = len(st.session_state.selected_images_for_prompt)
-        st.success(f"📸 **Photo Story Mode**: Writing about {selected_count} selected photo(s)")
-        st.info("The AI will ask you specific questions about each photo!")
-    else:
-        st.info("📸 **Photo Story Mode**: Select photos from the gallery to write about them")
 
 # Show historical context note if available
 if st.session_state.user_account and st.session_state.user_account['profile'].get('birthdate'):
@@ -2595,8 +2090,6 @@ if question_source == "regular":
         {current_session.get('guidance', '')}
     </div>
     """, unsafe_allow_html=True)
-elif st.session_state.image_prompt_mode:
-    st.info("✨ **Photo Story Mode** - The AI will ask you questions about your selected photos. Describe what you see, who's in them, and what memories they bring up!")
 else:
     st.info("✨ **Custom Prompt** - Write about whatever comes to mind!")
 
@@ -2612,7 +2105,7 @@ if question_source == "regular":
         st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
-# SECTION 23: CONVERSATION DISPLAY AND CHAT INPUT
+# SECTION 21: CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
 if current_session_id not in st.session_state.session_conversations:
     st.session_state.session_conversations[current_session_id] = {}
@@ -2638,28 +2131,13 @@ Let's explore this topic in detail:
 </div>
 <div style='font-size: 1.8rem; font-weight: bold; color: #2c3e50; line-height: 1.3;'>
 {current_question_text}
-</div>"""
-            
-            # Add image prompt note if in image prompt mode
-            if st.session_state.image_prompt_mode:
-                welcome_msg += f"""<div style='font-size: 1.1rem; margin-top: 1.5rem; color: #4CAF50; background-color: #e8f5e9; padding: 1rem; border-radius: 8px; border-left: 4px solid #4CAF50;'>
-📸 <strong>Photo Story Mode:</strong> You've selected {len(st.session_state.selected_images_for_prompt)} photo(s) to write about. I'll ask you questions about each photo to help tell their stories.
-</div>"""
-            else:
-                welcome_msg += f"""<div style='font-size: 1.1rem; margin-top: 1.5rem; color: #555;'>
+</div>
+<div style='font-size: 1.1rem; margin-top: 1.5rem; color: #555;'>
 Take your time with this—good biographies are built from thoughtful reflection.
 </div>"""
             
             st.markdown(welcome_msg, unsafe_allow_html=True)
-            
-            # Create conversation entry
-            conv_text = f"Let's explore this topic in detail: {current_question_text}\n\n"
-            if st.session_state.image_prompt_mode:
-                conv_text += f"📸 Photo Story Mode: You've selected {len(st.session_state.selected_images_for_prompt)} photo(s) to write about. I'll ask you questions about each photo to help tell their stories."
-            else:
-                conv_text += "Take your time with this—good biographies are built from thoughtful reflection."
-            
-            conversation.append({"role": "assistant", "content": conv_text})
+            conversation.append({"role": "assistant", "content": f"Let's explore this topic in detail: {current_question_text}\n\nTake your time with this—good biographies are built from thoughtful reflection."})
             st.session_state.session_conversations[current_session_id][current_question_text] = conversation
 
 # Display existing conversation
@@ -2713,6 +2191,7 @@ for i, message in enumerate(conversation):
                     word_count = len(re.findall(r'\w+', message["content"]))
                     st.caption(f"📝 {word_count} words • Click ✏️ to edit")
                 with col2:
+                    # FIXED LINE: Changed current_session_state to st.session_state
                     if st.button("✏️", key=f"edit_{st.session_state.current_session}_{hash(current_question_text)}_{i}"):
                         st.session_state.editing = (current_session_id, current_question_text, i)
                         st.session_state.edit_text = message["content"]
@@ -2766,9 +2245,12 @@ with input_container:
                     
                     ai_response = response.choices[0].message.content
                     
-                    # Add note about photos if in image prompt mode
-                    if st.session_state.image_prompt_mode:
-                        ai_response += f"\n\n📸 **Photo Note:** Keep describing your photos! Who, what, where, when, and why?"
+                    # Add professional note
+                    word_count = len(re.findall(r'\w+', user_input))
+                    if word_count < 50:
+                        ai_response += f"\n\n**Note:** You've touched on something important. Consider expanding on the sensory details—what did you see, hear, feel?"
+                    elif word_count < 150:
+                        ai_response += f"\n\n**Note:** Good detail. Where does the emotional weight live in this memory?"
                     
                     st.markdown(ai_response)
                     conversation.append({"role": "assistant", "content": ai_response})
@@ -2787,7 +2269,7 @@ with input_container:
         st.rerun()
 
 # ============================================================================
-# SECTION 24: WORD PROGRESS INDICATOR
+# SECTION 22: WORD PROGRESS INDICATOR
 # ============================================================================
 st.divider()
 
@@ -2844,10 +2326,10 @@ if st.session_state.editing_word_target:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 25: FOOTER WITH STATISTICS
+# SECTION 23: FOOTER WITH STATISTICS
 # ============================================================================
 st.divider()
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 with col1:
     total_words_all_sessions = sum(calculate_author_word_count(s["id"]) for s in SESSIONS)
     st.metric("Total Words", f"{total_words_all_sessions}")
@@ -2858,123 +2340,111 @@ with col3:
     total_topics_answered = sum(len(st.session_state.responses[s["id"]].get("questions", {})) for s in SESSIONS)
     total_all_topics = sum(len(s["questions"]) for s in SESSIONS)
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
-with col4:
-    if st.session_state.logged_in:
-        total_images = get_total_user_images(st.session_state.user_id)
-        st.metric("Total Photos", f"{total_images}")
 
 # ============================================================================
-# SECTION 26: PUBLISH & VAULT SECTION - UPDATED
+# SECTION 24: PUBLISH & VAULT SECTION (USING HTML BUTTONS)
 # ============================================================================
 st.divider()
-st.subheader("📘 Publish & Preserve")
+st.subheader("📘 Publish & Save Your Biography")
 
 # Get the current user's data
 current_user = st.session_state.get('user_id', '')
+export_data = {}
 
-if current_user and current_user != "":
-    # Prepare data
-    export_data = {}
-    for session in SESSIONS:
-        session_id = session["id"]
-        session_data = st.session_state.responses.get(session_id, {})
-        if session_data.get("questions"):
-            export_data[str(session_id)] = {
-                "title": session["title"],
-                "questions": session_data["questions"]
-            }
-    
-    # Get image count
-    total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
-    
-    if export_data:
-        # Create enhanced JSON data
-        enhanced_data = {
-            "user": current_user,
-            "stories": export_data,
-            "export_date": datetime.now().isoformat(),
-            "summary": {
-                "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                "total_images": total_images,
-                "total_sessions": len(export_data)
-            }
+# Prepare data for export
+for session in SESSIONS:
+    session_id = session["id"]
+    session_data = st.session_state.responses.get(session_id, {})
+    if session_data.get("questions"):
+        export_data[str(session_id)] = {
+            "title": session["title"],
+            "questions": session_data["questions"]
         }
+
+if current_user and current_user != "" and export_data:
+    # Count total stories
+    total_stories = sum(len(session['questions']) for session in export_data.values())
+    
+    # Create JSON data for the publisher
+    json_data = json.dumps({
+        "user": current_user,
+        "stories": export_data,
+        "export_date": datetime.now().isoformat()
+    }, indent=2)
+    
+    # Encode the data for URL
+    encoded_data = base64.b64encode(json_data.encode()).decode()
+    
+    # Create URL for the publisher
+    publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
+    publisher_url = f"{publisher_base_url}?data={encoded_data}"
+    
+    st.success(f"✅ **{total_stories} stories ready to publish!**")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🖨️ Create Your Book")
+        st.markdown(f"""
+        Generate a beautiful, formatted biography from your stories.
         
-        json_data = json.dumps(enhanced_data, indent=2)
+        Your book will include:
+        • Professional formatting
+        • Table of contents
+        • All your stories organized
+        • Ready to print or share
+        """)
         
-        # Encode the data for URL
-        encoded_data = base64.b64encode(json_data.encode()).decode()
+        # Use HTML button instead of st.link_button
+        st.markdown(f'''
+        <a href="{publisher_url}" target="_blank">
+            <button class="html-link-btn">
+                🖨️ Publish Biography
+            </button>
+        </a>
+        ''', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("#### 🔐 Save to Your Vault")
+        st.markdown("""
+        **After creating your book:**
         
-        # Create URL for the publisher
-        publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
-        publisher_url = f"{publisher_base_url}?data={encoded_data}"
+        1. Generate your biography (link on left)
+        2. Download the formatted PDF
+        3. Save it to your secure vault
         
-        col1, col2 = st.columns(2)
+        Your vault preserves important documents forever.
+        """)
         
-        with col1:
-            st.markdown("#### 🖨️ Create Your Book")
-            
-            if total_images > 0:
-                st.success(f"📚 **{sum(len(session['questions']) for session in export_data.values())} stories + {total_images} photo references**")
-                st.markdown("""
-                Your biography will include:
-                • All your stories formatted beautifully
-                • Photo references with captions
-                • Professional layout and design
-                • Ready to print or share digitally
-                """)
-            else:
-                st.success(f"📚 **{sum(len(session['questions']) for session in export_data.values())} stories**")
-                st.markdown("""
-                Your biography will include:
-                • All your stories formatted beautifully
-                • Professional layout and design
-                • Ready to print or share digitally
-                """)
-            
-            # Use HTML button instead of st.link_button
-            st.markdown(f'''
-            <a href="{publisher_url}" target="_blank">
-                <button class="html-link-btn">
-                    🖨️ Create Biography
-                </button>
-            </a>
-            ''', unsafe_allow_html=True)
-            
-            if total_images > 0:
-                st.caption(f"📸 {total_images} photo references will be included")
+        # Use HTML button for vault too
+        vault_url = "https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/"
+        st.markdown(f'''
+        <a href="{vault_url}" target="_blank">
+            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">
+                💾 Go to Secure Vault
+            </button>
+        </a>
+        ''', unsafe_allow_html=True)
+    
+    # Backup download
+    with st.expander("📥 Download Raw Data (Backup)"):
+        st.download_button(
+            label="Download Stories as JSON",
+            data=json_data,
+            file_name=f"{current_user}_stories.json",
+            mime="application/json",
+            use_container_width=True,
+            key="backup_download_btn"
+        )
+        st.caption("Use this if the publisher link doesn't work")
         
-        with col2:
-            st.markdown("#### 🔐 Secure Vault")
-            st.markdown("""
-            **Preserve everything forever:**
-            
-            • Store your complete biography
-            • Keep all photo references safe
-            • Access from anywhere
-            • Share with family securely
-            """)
-            
-            # Use HTML button for vault too
-            vault_url = "https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/"
-            st.markdown(f'''
-            <a href="{vault_url}" target="_blank">
-                <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">
-                    💾 Go to Secure Vault
-                </button>
-            </a>
-            ''', unsafe_allow_html=True)
-        
-        # Quick backup reminder
-        st.divider()
-        st.info("💡 **Remember:** Use the 'Backup Everything' button in the sidebar to download your complete data to your own device.")
-        
-    else:
-        st.info("📝 **Start writing your story!** Answer some questions first, then come back here to create your book.")
+elif current_user and current_user != "":
+    st.info("📝 **Answer some questions first!** Come back here after saving some stories.")
 else:
-    st.info("👤 **Please log in to publish your biography**")
+    st.info("👤 **Enter your name to begin**")
+
 # ============================================================================
-# SECTION 27: FOOTER
+# SECTION 25: FOOTER
 # ============================================================================
 st.markdown("---")
 
@@ -2983,13 +2453,10 @@ if st.session_state.user_account:
     profile = st.session_state.user_account['profile']
     account_age = (datetime.now() - datetime.fromisoformat(st.session_state.user_account['created_at'])).days
     
-    # Get total images
-    total_images = get_total_user_images(st.session_state.user_id) if st.session_state.logged_in else 0
-    
     footer_info = f"""
     MemLife Timeline • 👤 {profile['first_name']} {profile['last_name']} • 📧 {profile['email']} • 
     🎂 {profile.get('birthdate', 'Not specified')} • 🔥 {st.session_state.streak_days} day streak • 
-    📷 {total_images} photos • 📅 Account Age: {account_age} days
+    📅 Account Age: {account_age} days
     """
     st.caption(footer_info)
 else:
