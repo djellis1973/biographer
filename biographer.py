@@ -15,6 +15,7 @@ from email.mime.multipart import MIMEMultipart
 import secrets
 import string
 import base64  # For encoding export data
+import pandas as pd  # ADDED: For CSV handling of historical events
 
 # Initialize OpenAI client
 client = OpenAI(api_key=st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY")))
@@ -428,7 +429,146 @@ FALLBACK_PROMPTS = [
 ]
 
 # ============================================================================
-# SECTION 6: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
+# SECTION 6: HISTORICAL EVENTS CSV SYSTEM
+# ============================================================================
+def create_default_events_csv():
+    """Create a default historical events CSV file if it doesn't exist"""
+    default_events = [
+        ["1920s","Women get the vote in UK","Political","UK","Women over 21 get the right to vote in 1928"],
+        ["1920s","BBC founded","Media","UK","British Broadcasting Corporation founded in 1922"],
+        ["1930s","Great Depression","Economic","Global","Worldwide economic depression"],
+        ["1930s","George VI coronation","Royal","UK","Coronation in 1937"],
+        ["1940s","World War II","Military","Global","1939-1945 global conflict"],
+        ["1940s","NHS founded","Healthcare","UK","National Health Service established in 1948"],
+        ["1950s","Coronation of Elizabeth II","Royal","UK","Queen Elizabeth II crowned in 1953"],
+        ["1950s","Suez Crisis","Political","UK/Global","1956 Suez Crisis"],
+        ["1960s","Man on the moon","Science","Global","Apollo 11 moon landing in 1969"],
+        ["1960s","Beatles become famous","Culture","UK","Beatles rise to fame in early 1960s"],
+        ["1970s","UK joins EEC","Political","UK","UK joins European Economic Community in 1973"],
+        ["1970s","Oil crisis","Economic","Global","1973 oil crisis causes shortages"],
+        ["1980s","Falklands War","Military","UK","1982 war between UK and Argentina"],
+        ["1980s","Live Aid concert","Culture","Global","1985 charity concert"],
+        ["1990s","World Wide Web invented","Technology","Global","Tim Berners-Lee invents WWW in 1989"],
+        ["2000s","Financial crisis","Economic","Global","2007-2008 global financial crisis"],
+        ["2000s","London bombings","Political","UK","7 July 2005 London bombings"],
+        ["2010s","London Olympics","Sports","UK","2012 Summer Olympics in London"],
+        ["2010s","Brexit referendum","Political","UK","2016 referendum to leave EU"],
+        ["2020s","COVID-19 pandemic","Health","Global","Global pandemic begins 2020"],
+        ["2020s","Queen Elizabeth II dies","Royal","UK","Queen dies in 2022, King Charles III ascends"]
+    ]
+    
+    try:
+        with open("historical_events.csv", "w", encoding="utf-8") as f:
+            f.write("year_range,event,category,region,description\n")
+            for event in default_events:
+                f.write(",".join([f'"{item}"' for item in event]) + "\n")
+        print("Created default historical_events.csv file")
+        return True
+    except Exception as e:
+        print(f"Error creating default CSV: {e}")
+        return False
+
+def load_historical_events():
+    """Load historical events from CSV file"""
+    try:
+        csv_file = "historical_events.csv"
+        
+        if not os.path.exists(csv_file):
+            # Create default CSV if it doesn't exist
+            create_default_events_csv()
+        
+        # Read CSV file
+        df = pd.read_csv(csv_file)
+        
+        # Group events by decade
+        events_by_decade = {}
+        for _, row in df.iterrows():
+            decade = str(row['year_range']).strip()
+            event = str(row['event']).strip()
+            category = str(row.get('category', 'General')).strip()
+            region = str(row.get('region', 'Global')).strip()
+            description = str(row.get('description', '')).strip()
+            
+            if decade not in events_by_decade:
+                events_by_decade[decade] = []
+            
+            events_by_decade[decade].append({
+                'event': event,
+                'category': category,
+                'region': region,
+                'description': description,
+                'year_range': decade
+            })
+        
+        print(f"Loaded {len(df)} historical events from CSV")
+        return events_by_decade
+        
+    except Exception as e:
+        print(f"Error loading historical events: {e}")
+        return {}
+
+def get_events_for_birth_year(birth_year):
+    """Get historical events relevant to a person based on their birth year"""
+    try:
+        events_by_decade = load_historical_events()
+        
+        # Calculate current year
+        current_year = datetime.now().year
+        
+        # Create list of decades from birth year to current year
+        relevant_events = []
+        
+        # Calculate start decade (e.g., 1954 -> 1950s)
+        start_decade_year = (birth_year // 10) * 10
+        
+        # Loop through decades from birth decade to current decade
+        for decade_year in range(start_decade_year, current_year + 10, 10):
+            decade_key = f"{decade_year}s"
+            
+            if decade_key in events_by_decade:
+                for event in events_by_decade[decade_key]:
+                    # Calculate approximate age when event happened
+                    event_year = int(decade_key.replace('s', '')) + 5  # Mid-decade approximation
+                    age_at_event = event_year - birth_year
+                    
+                    if age_at_event >= 0:  # Only events after birth
+                        event_with_age = event.copy()
+                        event_with_age['approx_age'] = age_at_event
+                        relevant_events.append(event_with_age)
+        
+        # Sort by decade
+        relevant_events.sort(key=lambda x: x['year_range'])
+        
+        return relevant_events[:20]  # Limit to 20 most relevant events
+        
+    except Exception as e:
+        print(f"Error getting events for birth year {birth_year}: {e}")
+        return []
+
+def format_historical_context(events, birth_year):
+    """Format historical events for the AI prompt"""
+    if not events:
+        return ""
+    
+    context_lines = []
+    for event in events:
+        event_text = f"- {event['event']} ({event['year_range']})"
+        if event.get('region') == 'UK':
+            event_text += " [UK]"
+        if 'approx_age' in event and event['approx_age'] >= 0:
+            event_text += f" (Age {event['approx_age']})"
+        context_lines.append(event_text)
+    
+    return f"""
+HISTORICAL CONTEXT (Born {birth_year}):
+During their lifetime, these major events occurred:
+{chr(10).join(context_lines[:10])}
+
+Consider how these historical moments might have shaped their experiences and perspectives.
+"""
+
+# ============================================================================
+# SECTION 7: AUTHENTICATION & ACCOUNT MANAGEMENT FUNCTIONS
 # ============================================================================
 def generate_password(length=12):
     """Generate a secure random password"""
@@ -696,7 +836,7 @@ def logout_user():
     st.rerun()
 
 # ============================================================================
-# SECTION 7: JSON-BASED STORAGE FUNCTIONS
+# SECTION 8: JSON-BASED STORAGE FUNCTIONS
 # ============================================================================
 def get_user_filename(user_id):
     """Create a safe filename for user data"""
@@ -740,7 +880,7 @@ def save_user_data(user_id, responses_data):
         return False
 
 # ============================================================================
-# SECTION 8: NEW FUNCTIONS FOR ADDED FEATURES
+# SECTION 9: NEW FUNCTIONS FOR ADDED FEATURES
 # ============================================================================
 def update_streak():
     """Update user's writing streak"""
@@ -808,7 +948,7 @@ def save_jot(text, estimated_year=None):
     return True
 
 # ============================================================================
-# SECTION 9: AUTHENTICATION COMPONENTS
+# SECTION 10: AUTHENTICATION COMPONENTS
 # ============================================================================
 def show_login_signup():
     """Show login/signup interface"""
@@ -1047,7 +1187,7 @@ def show_profile_setup_modal():
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 10: SESSION STATE INITIALIZATION
+# SECTION 11: SESSION STATE INITIALIZATION
 # ============================================================================
 
 # Set page config first
@@ -1099,6 +1239,8 @@ if "current_jot" not in st.session_state:
     st.session_state.current_jot = ""
 if "show_jots" not in st.session_state:
     st.session_state.show_jots = False
+if "historical_events_loaded" not in st.session_state:
+    st.session_state.historical_events_loaded = False
 
 # Initialize streak system
 if "streak_days" not in st.session_state:
@@ -1153,7 +1295,7 @@ if st.session_state.logged_in and st.session_state.user_id and not st.session_st
     print(f"DEBUG: Data loaded for {st.session_state.user_id}")
 
 # ============================================================================
-# SECTION 11: CORE APPLICATION FUNCTIONS
+# SECTION 12: CORE APPLICATION FUNCTIONS
 # ============================================================================
 def save_response(session_id, question, answer):
     """Save response to both session state AND JSON file"""
@@ -1248,7 +1390,7 @@ def get_progress_info(session_id):
     }
 
 # ============================================================================
-# SECTION 12: AUTO-CORRECT FUNCTION
+# SECTION 13: AUTO-CORRECT FUNCTION
 # ============================================================================
 def auto_correct_text(text):
     """Auto-correct text using OpenAI"""
@@ -1270,7 +1412,7 @@ def auto_correct_text(text):
         return text
 
 # ============================================================================
-# SECTION 13: GHOSTWRITER PROMPT FUNCTION
+# SECTION 14: GHOSTWRITER PROMPT FUNCTION (ENHANCED WITH HISTORICAL EVENTS)
 # ============================================================================
 def get_system_prompt():
     current_session = SESSIONS[st.session_state.current_session]
@@ -1281,35 +1423,59 @@ def get_system_prompt():
     else:
         current_question = current_session["questions"][st.session_state.current_question]
     
+    # Get historical context if user has birthdate
+    historical_context = ""
+    if st.session_state.user_account and st.session_state.user_account['profile'].get('birthdate'):
+        try:
+            birthdate = st.session_state.user_account['profile']['birthdate']
+            birth_year = int(birthdate.split(', ')[-1])
+            
+            # Get relevant historical events
+            events = get_events_for_birth_year(birth_year)
+            
+            if events:
+                # Format historical context for the prompt
+                historical_context = format_historical_context(events, birth_year)
+        except Exception as e:
+            print(f"Error generating historical context: {e}")
+    
     if st.session_state.ghostwriter_mode:
         return f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
+{historical_context}
 
 YOUR APPROACH:
 1. Listen like an archivist
 2. Think in scenes, sensory details, and emotional truth
-3. Find the story that needs to be told
-4. Respect silence and complexity
+3. Connect personal stories to historical context when relevant
+4. Find the story that needs to be told
+5. Respect silence and complexity
 
-Tone: Literary but not pretentious. Serious but not solemn."""
+Tone: Literary but not pretentious. Serious but not solemn.
+
+IMPORTANT: When appropriate, reference historical context to prompt deeper reflection.
+Example: "You mentioned this happened in the 1980s. How did events like [historical event] shape your experience?""""
     else:
         return f"""You are a warm, professional biographer helping document a life story.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
+{historical_context}
 
 Please:
 1. Listen actively
 2. Acknowledge warmly
-3. Ask ONE natural follow-up question
+3. Ask ONE natural follow-up question that might connect to historical context
 4. Keep conversation flowing
 
-Tone: Kind, curious, professional"""
+Tone: Kind, curious, professional
+
+Note: Reference historical events when relevant to prompt richer stories."""
 
 # ============================================================================
-# SECTION 14: MAIN APP FLOW CONTROL
+# SECTION 15: MAIN APP FLOW CONTROL
 # ============================================================================
 
 # Show profile setup modal if needed
@@ -1323,8 +1489,18 @@ if not st.session_state.logged_in:
     show_login_signup()
     st.stop()
 
+# Load historical events once
+if not st.session_state.historical_events_loaded:
+    try:
+        events = load_historical_events()
+        if events:
+            print(f"Loaded historical events for {len(events)} decades")
+        st.session_state.historical_events_loaded = True
+    except Exception as e:
+        print(f"Error loading historical events: {e}")
+
 # ============================================================================
-# SECTION 15: MAIN APP HEADER
+# SECTION 16: MAIN APP HEADER
 # ============================================================================
 st.markdown(f"""
 <div class="main-header">
@@ -1335,7 +1511,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 16: SIDEBAR - USER PROFILE AND SETTINGS
+# SECTION 17: SIDEBAR - USER PROFILE AND SETTINGS
 # ============================================================================
 with st.sidebar:
     # User Profile Header with Account Info
@@ -1350,6 +1526,17 @@ with st.sidebar:
         # Show birthdate and timeline info
         if profile.get('birthdate'):
             st.caption(f"🎂 Born: {profile['birthdate']}")
+            
+            # Show historical context note
+            try:
+                birth_year = int(profile['birthdate'].split(', ')[-1])
+                events = get_events_for_birth_year(birth_year)
+                if events:
+                    uk_events = [e for e in events if e.get('region') == 'UK']
+                    global_events = len(events) - len(uk_events)
+                    st.caption(f"📚 {len(events)} historical events in your lifetime ({len(uk_events)} UK, {global_events} global)")
+            except:
+                pass
         else:
             st.caption("🎂 Birthdate: Not set")
         
@@ -1401,6 +1588,12 @@ with st.sidebar:
                 st.subheader("📅 Timeline Coverage")
                 st.progress(coverage / 100)
                 st.caption(f"{actual_entries} memories across {age} years")
+                
+                # Show historical timeline note
+                if actual_entries > 0:
+                    events = get_events_for_birth_year(birth_year)
+                    if events and len(events) > 0:
+                        st.caption(f"📜 {len(events)} historical events in your timeline")
         except:
             pass
     
@@ -1468,7 +1661,7 @@ with st.sidebar:
     ghostwriter_mode = st.toggle(
         "Professional Ghostwriter Mode", 
         value=st.session_state.ghostwriter_mode,
-        help="When enabled, the AI acts as a professional biographer using advanced interviewing techniques.",
+        help="When enabled, the AI acts as a professional biographer using advanced interviewing techniques with historical context.",
         key="ghostwriter_toggle"
     )
     
@@ -1489,8 +1682,44 @@ with st.sidebar:
     
     if st.session_state.ghostwriter_mode:
         st.success("✓ Professional mode active")
+        st.caption("With historical context integration")
     else:
         st.info("Standard mode active")
+    
+    # ============================================================================
+    # HISTORICAL EVENTS MANAGEMENT
+    # ============================================================================
+    st.divider()
+    st.header("📜 Historical Context")
+    
+    if st.session_state.user_account and st.session_state.user_account['profile'].get('birthdate'):
+        try:
+            birth_year = int(st.session_state.user_account['profile']['birthdate'].split(', ')[-1])
+            events = get_events_for_birth_year(birth_year)
+            
+            if events:
+                st.success(f"✓ {len(events)} historical events loaded")
+                st.caption(f"From {birth_year} to present")
+                
+                # Show sample events
+                with st.expander("View Sample Events", expanded=False):
+                    for i, event in enumerate(events[:5]):
+                        region_emoji = "🇬🇧" if event.get('region') == 'UK' else "🌍"
+                        st.markdown(f"**{region_emoji} {event['event']}**")
+                        st.caption(f"{event['year_range']} • {event.get('category', 'General')}")
+                        if i < 4:
+                            st.divider()
+                
+                # Button to view all events
+                if st.button("📋 View All Historical Events", key="view_all_events"):
+                    st.session_state.show_event_manager = True
+                    st.rerun()
+            else:
+                st.info("No historical events loaded")
+        except:
+            st.info("Add birthdate to see historical context")
+    else:
+        st.info("Add your birthdate to enable historical context")
     
     # ============================================================================
     # SESSION NAVIGATION
@@ -1703,7 +1932,66 @@ with st.sidebar:
                 st.rerun()
 
 # ============================================================================
-# SECTION 17: QUICK NOTES VIEWER (IF REQUESTED)
+# SECTION 18: HISTORICAL EVENTS VIEWER (IF REQUESTED)
+# ============================================================================
+if st.session_state.get('show_event_manager', False):
+    st.markdown("---")
+    st.subheader("📜 Historical Events in Your Lifetime")
+    
+    if st.session_state.user_account and st.session_state.user_account['profile'].get('birthdate'):
+        try:
+            birth_year = int(st.session_state.user_account['profile']['birthdate'].split(', ')[-1])
+            events = get_events_for_birth_year(birth_year)
+            
+            if events:
+                st.info(f"**Born {birth_year}** - {len(events)} historical events from your lifetime")
+                
+                # Filter options
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    show_uk = st.checkbox("UK Events", value=True, key="filter_uk")
+                with col2:
+                    show_global = st.checkbox("Global Events", value=True, key="filter_global")
+                with col3:
+                    category_filter = st.selectbox("Category", ["All"] + list(set(e.get('category', 'General') for e in events)))
+                
+                # Filter events
+                filtered_events = []
+                for event in events:
+                    if show_uk and event.get('region') == 'UK':
+                        if category_filter == "All" or event.get('category', 'General') == category_filter:
+                            filtered_events.append(event)
+                    elif show_global and event.get('region') != 'UK':
+                        if category_filter == "All" or event.get('category', 'General') == category_filter:
+                            filtered_events.append(event)
+                
+                # Display events
+                for i, event in enumerate(filtered_events):
+                    region_emoji = "🇬🇧" if event.get('region') == 'UK' else "🌍"
+                    with st.expander(f"{region_emoji} {event['event']} ({event['year_range']})", expanded=False):
+                        st.markdown(f"**Category:** {event.get('category', 'General')}")
+                        if 'approx_age' in event:
+                            st.markdown(f"**Your age:** {event['approx_age']} years old")
+                        if event.get('description'):
+                            st.markdown(f"**Description:** {event['description']}")
+                
+                st.divider()
+                st.caption("These events are automatically integrated into your interview prompts to provide historical context.")
+            else:
+                st.warning("No historical events found for your birth year.")
+        except Exception as e:
+            st.error(f"Error loading historical events: {e}")
+    else:
+        st.warning("Please add your birthdate to view historical events.")
+    
+    if st.button("Close Event Viewer", key="close_events_btn"):
+        st.session_state.show_event_manager = False
+        st.rerun()
+    
+    st.markdown("---")
+
+# ============================================================================
+# SECTION 19: QUICK NOTES VIEWER (IF REQUESTED)
 # ============================================================================
 if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
@@ -1730,7 +2018,7 @@ if st.session_state.get('show_jots', False) and st.session_state.quick_jots:
     st.markdown("---")
 
 # ============================================================================
-# SECTION 18: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
+# SECTION 20: MAIN CONTENT - SESSION HEADER WITH "NO BLANK PAGES" FEATURE
 # ============================================================================
 current_session = SESSIONS[st.session_state.current_session]
 current_session_id = current_session["id"]
@@ -1753,7 +2041,7 @@ with col1:
     st.caption(f"📝 {session_responses}/{total_questions} topics answered")
     
     if st.session_state.ghostwriter_mode:
-        st.markdown('<p class="ghostwriter-tag">Professional Ghostwriter Mode</p>', unsafe_allow_html=True)
+        st.markdown('<p class="ghostwriter-tag">Professional Ghostwriter Mode (with historical context)</p>', unsafe_allow_html=True)
         
 with col2:
     if question_source == "custom":
@@ -1784,6 +2072,18 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# Show historical context note if available
+if st.session_state.user_account and st.session_state.user_account['profile'].get('birthdate'):
+    try:
+        birth_year = int(st.session_state.user_account['profile']['birthdate'].split(', ')[-1])
+        events = get_events_for_birth_year(birth_year)
+        if events and st.session_state.ghostwriter_mode:
+            uk_count = len([e for e in events if e.get('region') == 'UK'])
+            global_count = len(events) - uk_count
+            st.info(f"📜 **Historical Context Enabled:** Your responses will be enriched with {len(events)} historical events ({uk_count} UK, {global_count} global) from your lifetime.")
+    except:
+        pass
+
 # Show session guidance (only for regular prompts)
 if question_source == "regular":
     st.markdown(f"""
@@ -1806,7 +2106,7 @@ if question_source == "regular":
         st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
-# SECTION 19: CONVERSATION DISPLAY AND CHAT INPUT
+# SECTION 21: CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
 if current_session_id not in st.session_state.session_conversations:
     st.session_state.session_conversations[current_session_id] = {}
@@ -1970,7 +2270,7 @@ with input_container:
         st.rerun()
 
 # ============================================================================
-# SECTION 20: WORD PROGRESS INDICATOR
+# SECTION 22: WORD PROGRESS INDICATOR
 # ============================================================================
 st.divider()
 
@@ -2027,7 +2327,7 @@ if st.session_state.editing_word_target:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# SECTION 21: FOOTER WITH STATISTICS
+# SECTION 23: FOOTER WITH STATISTICS
 # ============================================================================
 st.divider()
 col1, col2, col3 = st.columns(3)
@@ -2043,7 +2343,7 @@ with col3:
     st.metric("Topics Explored", f"{total_topics_answered}/{total_all_topics}")
 
 # ============================================================================
-# SECTION 22: PUBLISH & VAULT SECTION (USING HTML BUTTONS)
+# SECTION 24: PUBLISH & VAULT SECTION (USING HTML BUTTONS)
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Save Your Biography")
@@ -2145,7 +2445,7 @@ else:
     st.info("👤 **Enter your name to begin**")
 
 # ============================================================================
-# SECTION 23: FOOTER
+# SECTION 25: FOOTER
 # ============================================================================
 st.markdown("---")
 
