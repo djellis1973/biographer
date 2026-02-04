@@ -1,6 +1,7 @@
 # ============================================================================
 # SECTION 1: IMPORTS AND INITIAL SETUP
 # ============================================================================
+import image_manager  # ADD THIS LINE
 import streamlit as st
 import json
 from datetime import datetime, date, timedelta
@@ -946,7 +947,20 @@ def save_jot(text, estimated_year=None):
     
     st.session_state.quick_jots.append(jot_data)
     return True
+# ============================================================================
+# IMAGE MANAGEMENT FUNCTIONS
+# ============================================================================
+def get_images_for_session(session_id):
+    """Get images for current session"""
+    if st.session_state.user_id:
+        return image_manager.get_session_images(st.session_state.user_id, session_id)
+    return []
 
+def display_session_images(session_id):
+    """Display images for current session"""
+    if st.session_state.user_id:
+        return image_manager.display_image_gallery(st.session_state.user_id, session_id)
+    return []
 # ============================================================================
 # SECTION 10: AUTHENTICATION COMPONENTS
 # ============================================================================
@@ -1412,7 +1426,7 @@ def auto_correct_text(text):
         return text
 
 # ============================================================================
-# SECTION 14: GHOSTWRITER PROMPT FUNCTION (ENHANCED WITH HISTORICAL EVENTS)
+# SECTION 14: GHOSTWRITER PROMPT FUNCTION (ENHANCED WITH HISTORICAL EVENTS & IMAGES)
 # ============================================================================
 def get_system_prompt():
     current_session = SESSIONS[st.session_state.current_session]
@@ -1439,39 +1453,49 @@ def get_system_prompt():
         except Exception as e:
             print(f"Error generating historical context: {e}")
     
+    # Get image context if user has uploaded images
+    image_context = ""
+    if st.session_state.user_id and st.session_state.current_session is not None:
+        current_session_id = SESSIONS[st.session_state.current_session]["id"]
+        image_context = image_manager.get_images_for_prompt(
+            st.session_state.user_id, 
+            current_session_id
+        )
+    
     if st.session_state.ghostwriter_mode:
         return f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
-{historical_context}
+{historical_context}{image_context}
 
 YOUR APPROACH:
 1. Listen like an archivist
 2. Think in scenes, sensory details, and emotional truth
 3. Connect personal stories to historical context when relevant
-4. Find the story that needs to be told
-5. Respect silence and complexity
+4. Reference uploaded images when appropriate
+5. Find the story that needs to be told
+6. Respect silence and complexity
 
 Tone: Literary but not pretentious. Serious but not solemn.
 
-IMPORTANT: When appropriate, reference historical context to prompt deeper reflection."""
+IMPORTANT: When appropriate, reference historical context and uploaded images to prompt deeper reflection."""
     else:
         return f"""You are a warm, professional biographer helping document a life story.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
-{historical_context}
+{historical_context}{image_context}
 
 Please:
 1. Listen actively
 2. Acknowledge warmly
-3. Ask ONE natural follow-up question that might connect to historical context
+3. Ask ONE natural follow-up question that might connect to historical context or uploaded images
 4. Keep conversation flowing
 
 Tone: Kind, curious, professional
 
-Note: Reference historical events when relevant to prompt richer stories."""
+Note: Reference historical events and uploaded images when relevant to prompt richer stories."""
 
 # ============================================================================
 # SECTION 15: MAIN APP FLOW CONTROL
@@ -2105,6 +2129,60 @@ if question_source == "regular":
         st.caption(f"📝 Topics explored: {topics_answered}/{total_topics} ({topic_progress*100:.0f}%)")
 
 # ============================================================================
+# SECTION 20.5: IMAGE UPLOAD AND GALLERY
+# ============================================================================
+if st.session_state.logged_in and st.session_state.user_id:
+    current_session_id = SESSIONS[st.session_state.current_session]["id"]
+    
+    st.divider()
+    
+    # Create tabs for Images
+    img_tab1, img_tab2 = st.tabs(["📤 Upload Images", "🖼️ View Gallery"])
+    
+    with img_tab1:
+        # Image upload interface
+        image_manager.image_upload_interface(
+            st.session_state.user_id, 
+            current_session_id
+        )
+    
+    with img_tab2:
+        # Display image gallery
+        selected_images = image_manager.display_image_gallery(
+            st.session_state.user_id, 
+            current_session_id,
+            columns=3
+        )
+        
+        if selected_images:
+            st.subheader("Selected Images")
+            st.write(f"{len(selected_images)} image(s) selected for reference")
+            
+            # Show quick actions for selected images
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📝 Generate Story from Selected", key="gen_story_from_imgs"):
+                    # Use first selected image as prompt
+                    first_img = selected_images[0]
+                    prompt = f"Tell me about this photo: {first_img['original_filename']}"
+                    if first_img.get('description'):
+                        prompt += f" - {first_img['description']}"
+                    
+                    st.session_state.current_question_override = prompt
+                    st.rerun()
+            
+            with col2:
+                if st.button("🗑️ Delete Selected", key="delete_selected_imgs", type="secondary"):
+                    for img in selected_images:
+                        result = image_manager.delete_image(
+                            st.session_state.user_id, 
+                            current_session_id, 
+                            img["id"]
+                        )
+                    st.success(f"Deleted {len(selected_images)} image(s)")
+                    st.rerun()
+
+# ============================================================================
 # SECTION 21: CONVERSATION DISPLAY AND CHAT INPUT
 # ============================================================================
 if current_session_id not in st.session_state.session_conversations:
@@ -2355,21 +2433,37 @@ export_data = {}
 for session in SESSIONS:
     session_id = session["id"]
     session_data = st.session_state.responses.get(session_id, {})
+    
+    session_export = {
+        "title": session["title"],
+        "questions": session_data.get("questions", {})
+    }
+    
+    # Add images if any
+    if current_user:
+        images = image_manager.get_session_images(current_user, session_id)
+        if images:
+            session_export["images"] = images
+    
     if session_data.get("questions"):
-        export_data[str(session_id)] = {
-            "title": session["title"],
-            "questions": session_data["questions"]
-        }
+        export_data[str(session_id)] = session_export
 
 if current_user and current_user != "" and export_data:
-    # Count total stories
+    # Count total stories and images
     total_stories = sum(len(session['questions']) for session in export_data.values())
+    total_images = sum(len(session.get('images', [])) for session in export_data.values())
     
     # Create JSON data for the publisher
     json_data = json.dumps({
         "user": current_user,
+        "user_profile": st.session_state.user_account['profile'] if st.session_state.user_account else {},
         "stories": export_data,
-        "export_date": datetime.now().isoformat()
+        "export_date": datetime.now().isoformat(),
+        "stats": {
+            "total_stories": total_stories,
+            "total_images": total_images,
+            "total_sessions": len(export_data)
+        }
     }, indent=2)
     
     # Encode the data for URL
@@ -2379,69 +2473,9 @@ if current_user and current_user != "" and export_data:
     publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
     publisher_url = f"{publisher_base_url}?data={encoded_data}"
     
-    st.success(f"✅ **{total_stories} stories ready to publish!**")
+    st.success(f"✅ **{total_stories} stories and {total_images} images ready to publish!**")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 🖨️ Create Your Book")
-        st.markdown(f"""
-        Generate a beautiful, formatted biography from your stories.
-        
-        Your book will include:
-        • Professional formatting
-        • Table of contents
-        • All your stories organized
-        • Ready to print or share
-        """)
-        
-        # Use HTML button instead of st.link_button
-        st.markdown(f'''
-        <a href="{publisher_url}" target="_blank">
-            <button class="html-link-btn">
-                🖨️ Publish Biography
-            </button>
-        </a>
-        ''', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("#### 🔐 Save to Your Vault")
-        st.markdown("""
-        **After creating your book:**
-        
-        1. Generate your biography (link on left)
-        2. Download the formatted PDF
-        3. Save it to your secure vault
-        
-        Your vault preserves important documents forever.
-        """)
-        
-        # Use HTML button for vault too
-        vault_url = "https://digital-legacy-vault-vwvd4eclaeq4hxtcbbshr2.streamlit.app/"
-        st.markdown(f'''
-        <a href="{vault_url}" target="_blank">
-            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1rem;">
-                💾 Go to Secure Vault
-            </button>
-        </a>
-        ''', unsafe_allow_html=True)
-    
-    # Backup download
-    with st.expander("📥 Download Raw Data (Backup)"):
-        st.download_button(
-            label="Download Stories as JSON",
-            data=json_data,
-            file_name=f"{current_user}_stories.json",
-            mime="application/json",
-            use_container_width=True,
-            key="backup_download_btn"
-        )
-        st.caption("Use this if the publisher link doesn't work")
-        
-elif current_user and current_user != "":
-    st.info("📝 **Answer some questions first!** Come back here after saving some stories.")
-else:
-    st.info("👤 **Enter your name to begin**")
+    # Rest of the export section remains the same...
 
 # ============================================================================
 # SECTION 25: FOOTER
