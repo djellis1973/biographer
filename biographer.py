@@ -36,7 +36,7 @@ EMAIL_CONFIG = {
 }
 
 # ============================================================================
-# SECTION 3: SIMPLIFIED IMAGE MANAGER
+# SECTION 3: ENHANCED IMAGE MANAGER WITH BASE64 EXPORT
 # ============================================================================
 def get_user_image_folder(user_id):
     """Get or create user's image folder"""
@@ -64,7 +64,10 @@ def save_image_metadata(user_id, session_id, image_info):
         if str(session_id) not in metadata:
             metadata[str(session_id)] = []
         
-        metadata[str(session_id)].append(image_info)
+        # Check if image with same ID already exists
+        existing_ids = [img.get("id") for img in metadata[str(session_id)]]
+        if image_info["id"] not in existing_ids:
+            metadata[str(session_id)].append(image_info)
         
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
@@ -280,6 +283,64 @@ def get_total_user_images(user_id):
             pass
     
     return 0
+
+def get_image_as_base64(image_path):
+    """Get image as base64 encoded string"""
+    try:
+        if os.path.exists(image_path):
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode('utf-8')
+    except Exception as e:
+        print(f"Error encoding image {image_path}: {e}")
+    return None
+
+def get_all_images_with_base64(user_id):
+    """Get all images with base64 encoding for export"""
+    all_images = {}
+    
+    metadata_file = f"user_images/{user_id}/image_metadata.json"
+    
+    if os.path.exists(metadata_file):
+        try:
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+            
+            for session_id_str, images in metadata.items():
+                session_id = int(session_id_str)
+                if session_id not in all_images:
+                    all_images[session_id] = []
+                
+                for img_info in images:
+                    # Get the original image as base64
+                    if os.path.exists(img_info["paths"]["original"]):
+                        base64_data = get_image_as_base64(img_info["paths"]["original"])
+                        
+                        # Get thumbnail as base64 too
+                        thumbnail_base64 = None
+                        if os.path.exists(img_info["paths"]["thumbnail"]):
+                            thumbnail_base64 = get_image_as_base64(img_info["paths"]["thumbnail"])
+                        
+                        if base64_data:
+                            enhanced_image = {
+                                "id": img_info["id"],
+                                "original_filename": img_info["original_filename"],
+                                "saved_filename": img_info["saved_filename"],
+                                "description": img_info.get("description", ""),
+                                "upload_date": img_info["upload_date"],
+                                "session_id": session_id,
+                                "file_size_kb": img_info.get("file_size_kb", 0),
+                                "base64_data": base64_data,
+                                "thumbnail_base64": thumbnail_base64,
+                                "mime_type": f"image/{img_info['saved_filename'].split('.')[-1].lower() if '.' in img_info['saved_filename'] else 'jpeg'}",
+                                "file_path": img_info["paths"]["original"]
+                            }
+                            all_images[session_id].append(enhanced_image)
+            
+        except Exception as e:
+            print(f"Error getting images with base64: {e}")
+    
+    return all_images
+
 # ============================================================================
 # SECTION 4: CSS STYLING AND VISUAL DESIGN
 # ============================================================================
@@ -2077,7 +2138,7 @@ with st.sidebar:
     st.divider()
     
     # ============================================================================
-    # BACKUP & EXPORT
+    # BACKUP & EXPORT - UPDATED WITH IMAGES
     # ============================================================================
     st.subheader("💾 Backup Everything")
     
@@ -2098,23 +2159,14 @@ with st.sidebar:
                     "questions": session_data["questions"]
                 }
         
-        # Prepare images data
-        image_data = {}
-        for session in SESSIONS:
-            session_id = session["id"]
-            images = get_session_images(st.session_state.user_id, session_id)
-            if images:
-                image_data[str(session_id)] = []
-                for img in images:
-                    image_data[str(session_id)].append({
-                        "filename": img["original_filename"],
-                        "description": img.get("description", ""),
-                        "upload_date": img["upload_date"],
-                        "session_id": session_id
-                    })
+        # Prepare images data WITH BASE64 ENCODING
+        all_images_with_base64 = get_all_images_with_base64(st.session_state.user_id)
         
-        if export_data or image_data:
-            # Create complete backup data
+        # Count total images
+        total_images_export = sum(len(images) for images in all_images_with_base64.values())
+        
+        if export_data or all_images_with_base64:
+            # Create complete backup data WITH IMAGES
             backup_data = {
                 "user": st.session_state.user_id,
                 "user_profile": {
@@ -2124,13 +2176,15 @@ with st.sidebar:
                     "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
                 } if st.session_state.user_account else {},
                 "stories": export_data,
-                "images": image_data,
+                "images": all_images_with_base64,  # INCLUDES BASE64 ENCODED IMAGES
                 "export_date": datetime.now().isoformat(),
                 "summary": {
                     "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                    "total_images": sum(len(images) for images in image_data.values()),
+                    "total_images": total_images_export,
                     "total_sessions": len(export_data)
-                }
+                },
+                "export_type": "complete_with_images_base64",
+                "note": "Images are base64 encoded and included in the JSON file"
             }
             
             backup_json = json.dumps(backup_data, indent=2)
@@ -2146,7 +2200,7 @@ with st.sidebar:
                 mime="application/json",
                 use_container_width=True,
                 key="download_backup_btn",
-                help="Download everything: stories + photo references"
+                help="Download everything: stories + base64 encoded photos"
             )
             
             # Show what's included
@@ -2157,20 +2211,22 @@ with st.sidebar:
                         story_count = len(session_data['questions'])
                         st.caption(f"• Session {session_id}: {session_data['title']} - {story_count} stories")
                 
-                if image_data:
-                    st.success("✅ **Photo References Included:**")
-                    for session_id, images in image_data.items():
+                if all_images_with_base64:
+                    st.success("✅ **Photos Included (Base64 Encoded):**")
+                    for session_id, images in all_images_with_base64.items():
                         image_count = len(images)
-                        session_title = next((s["title"] for s in SESSIONS if str(s["id"]) == session_id), f"Session {session_id}")
+                        session_title = next((s["title"] for s in SESSIONS if str(s["id"]) == str(session_id)), f"Session {session_id}")
                         st.caption(f"• {session_title} - {image_count} photos")
+                    
+                    st.info(f"📸 Total: {total_images_export} photos included as base64 data")
                 
-                st.info("💡 Photo references include filenames, descriptions, and dates.")
+                st.info("💡 All photos are base64 encoded and embedded in the JSON file.")
             
-            # PUBLISH SECTION
+            # PUBLISH SECTION - UPDATED WITH IMAGES
             st.divider()
             st.subheader("🖨️ Create Your Book")
             
-            # Create special publisher data WITH IMAGES
+            # Create special publisher data WITH BASE64 ENCODED IMAGES
             publisher_data = {
                 "user": st.session_state.user_id,
                 "user_profile": {
@@ -2180,14 +2236,15 @@ with st.sidebar:
                     "birthdate": st.session_state.user_account['profile'].get('birthdate', '')
                 } if st.session_state.user_account else {},
                 "stories": export_data,
-                "images": image_data,  # THIS IS CRITICAL - SEND IMAGES TO PUBLISHER
+                "images": all_images_with_base64,  # INCLUDES BASE64 ENCODED IMAGES
                 "export_date": datetime.now().isoformat(),
                 "summary": {
                     "total_stories": sum(len(session['questions']) for session in export_data.values()),
-                    "total_images": sum(len(images) for images in image_data.values()),
+                    "total_images": total_images_export,
                     "total_sessions": len(export_data)
                 },
-                "publisher_note": "Includes photo references for book formatting"
+                "export_type": "publisher_ready_with_images",
+                "publisher_note": "Includes base64 encoded photos for book formatting"
             }
             
             publisher_json = json.dumps(publisher_data, indent=2)
@@ -2197,20 +2254,27 @@ with st.sidebar:
             publisher_base_url = "https://deeperbiographer-dny9n2j6sflcsppshrtrmu.streamlit.app/"
             publisher_url = f"{publisher_base_url}?data={encoded_data}"
             
-            if total_images > 0:
-                st.info(f"📚 Create a beautiful book with {total_answers} stories and {total_images} photo references")
+            if total_images_export > 0:
+                st.success(f"📚 **Create a beautiful book with:**")
+                st.write(f"• {sum(len(session['questions']) for session in export_data.values())} stories")
+                st.write(f"• {total_images_export} photos with captions")
+                st.write("• Professional layout with images")
             else:
-                st.info(f"📚 Create a beautiful book with {total_answers} stories")
+                st.info(f"📚 Create a beautiful book with {sum(len(session['questions']) for session in export_data.values())} stories")
             
             # Use HTML button for publishing
             st.markdown(f'''
             <a href="{publisher_url}" target="_blank">
                 <button class="html-link-btn" style="margin-top: 0.5rem;">
-                    🖨️ Create Biography
+                    🖨️ Create Biography with Photos
                 </button>
             </a>
             ''', unsafe_allow_html=True)
-            st.caption("Photo references will be included in your book")
+            
+            if total_images_export > 0:
+                st.success(f"✅ {total_images_export} photos will be included in your book!")
+            else:
+                st.info("📸 Add photos to include them in your book!")
             
         else:
             st.warning("No data to backup yet! Start by answering some questions or uploading photos.")
@@ -2824,7 +2888,7 @@ with col4:
         st.metric("Total Photos", f"{total_images}")
 
 # ============================================================================
-# SECTION 26: PUBLISH & VAULT SECTION - UPDATED
+# SECTION 26: PUBLISH & VAULT SECTION - UPDATED WITH IMAGES
 # ============================================================================
 st.divider()
 st.subheader("📘 Publish & Preserve")
@@ -2844,37 +2908,26 @@ if current_user and current_user != "":
                 "questions": session_data["questions"]
             }
     
-    # Prepare images
-    image_data = {}
-    if st.session_state.logged_in:
-        for session in SESSIONS:
-            session_id = session["id"]
-            images = get_session_images(st.session_state.user_id, session_id)
-            if images:
-                image_data[str(session_id)] = []
-                for img in images:
-                    image_data[str(session_id)].append({
-                        "filename": img["original_filename"],
-                        "description": img.get("description", ""),
-                        "upload_date": img["upload_date"]
-                    })
+    # Prepare images WITH BASE64
+    all_images_with_base64 = get_all_images_with_base64(st.session_state.user_id)
+    total_images_export = sum(len(images) for images in all_images_with_base64.values())
     
-    if export_data or image_data:
+    if export_data or all_images_with_base64:
         # Count totals
         total_stories = sum(len(session['questions']) for session in export_data.values())
-        total_images = sum(len(images) for images in image_data.values())
         
-        # Create enhanced JSON data
+        # Create enhanced JSON data WITH IMAGES
         enhanced_data = {
             "user": current_user,
             "stories": export_data,
-            "images": image_data,
+            "images": all_images_with_base64,  # INCLUDES BASE64 ENCODED IMAGES
             "export_date": datetime.now().isoformat(),
             "summary": {
                 "total_stories": total_stories,
-                "total_images": total_images,
+                "total_images": total_images_export,
                 "total_sessions": len(export_data)
-            }
+            },
+            "export_type": "complete_with_images_base64"
         }
         
         json_data = json.dumps(enhanced_data, indent=2)
@@ -2891,8 +2944,8 @@ if current_user and current_user != "":
         with col1:
             st.markdown("#### 🖨️ Create Your Book")
             
-            if total_images > 0:
-                st.success(f"📚 **{total_stories} stories + {total_images} photos**")
+            if total_images_export > 0:
+                st.success(f"📚 **{total_stories} stories + {total_images_export} photos**")
                 st.markdown("""
                 Your biography will include:
                 • All your stories formatted beautifully
@@ -2918,8 +2971,10 @@ if current_user and current_user != "":
             </a>
             ''', unsafe_allow_html=True)
             
-            if total_images > 0:
-                st.caption(f"📸 {total_images} photo references will be included")
+            if total_images_export > 0:
+                st.success(f"✅ {total_images_export} photos included as base64 data")
+            else:
+                st.info("📸 Add photos to include them in your book!")
         
         with col2:
             st.markdown("#### 🔐 Secure Vault")
@@ -2950,6 +3005,7 @@ if current_user and current_user != "":
         st.info("📝 **Start writing your story!** Answer some questions first, then come back here to create your book.")
 else:
     st.info("👤 **Please log in to publish your biography**")
+
 # ============================================================================
 # SECTION 27: FOOTER
 # ============================================================================
