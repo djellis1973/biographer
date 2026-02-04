@@ -1440,7 +1440,7 @@ def get_system_prompt():
             print(f"Error generating historical context: {e}")
     
     if st.session_state.ghostwriter_mode:
-        prompt = f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
+        return f"""ROLE: You are a senior literary biographer with multiple award-winning books to your name.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
@@ -1456,9 +1456,8 @@ YOUR APPROACH:
 Tone: Literary but not pretentious. Serious but not solemn.
 
 IMPORTANT: When appropriate, reference historical context to prompt deeper reflection."""
-        return prompt
     else:
-        prompt = f"""You are a warm, professional biographer helping document a life story.
+        return f"""You are a warm, professional biographer helping document a life story.
 
 CURRENT SESSION: Session {current_session['id']}: {current_session['title']}
 CURRENT TOPIC: "{current_question}"
@@ -1473,7 +1472,6 @@ Please:
 Tone: Kind, curious, professional
 
 Note: Reference historical events when relevant to prompt richer stories."""
-        return prompt
 
 # ============================================================================
 # SECTION 15: MAIN APP FLOW CONTROL
